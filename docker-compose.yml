@@ -28,16 +28,22 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
-#  kafka-init:
-#    image: confluentinc/cp-kafka:7.6.1
-#    container_name: telecom-kafka-init
- #   depends_on:
-  #    - kafka
-   # entrypoint: ["/bin/sh", "-c"]
-    #command:
-     # - |
-      #  kafka-topics --bootstrap-server kafka:9092 \
-       #   --create --if-not-exists \
-        #  --topic milan.traffic.raw \
-         # --partitions 3 \
-          #--replication-factor 1
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    hostname: keycloak
+    container_name: telecom-keycloak
+    network_mode: host
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://localhost:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
+      KC_HTTP_PORT: 8081
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+
