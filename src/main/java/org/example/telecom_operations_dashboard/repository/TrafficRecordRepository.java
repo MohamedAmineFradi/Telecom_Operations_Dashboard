@@ -16,6 +16,7 @@ public interface TrafficRecordRepository extends JpaRepository<TrafficRecord, Tr
         FROM TrafficRecord t
         WHERE t.datetime BETWEEN :start AND :end
           AND t.cellId = :cellId
+        ORDER BY t.datetime ASC
         """)
     List<TrafficRecord> findByCellAndInterval(
             @Param("cellId") Integer cellId,

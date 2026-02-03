@@ -1,7 +1,7 @@
 package org.example.telecom_operations_dashboard.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.example.telecom_operations_dashboard.DTO.TrafficEvent;
+import org.example.telecom_operations_dashboard.dto.TrafficEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;

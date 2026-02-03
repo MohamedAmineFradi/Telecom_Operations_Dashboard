@@ -23,5 +23,18 @@ public interface HourlyTrafficRepository extends Repository<TrafficRecord, Traff
             @Param("hour") OffsetDateTime hour,
             @Param("limit") int limit
     );
+
+
+    @Query(value = """
+        SELECT hour,
+               cell_id      AS cellId,
+               total_activity AS totalActivity
+        FROM v_hourly_traffic
+        WHERE hour = :hour
+        """, nativeQuery = true)
+    List<HourlyTrafficView> findAllAtHour(@Param("hour") OffsetDateTime hour);
+
+
+
 }
 
