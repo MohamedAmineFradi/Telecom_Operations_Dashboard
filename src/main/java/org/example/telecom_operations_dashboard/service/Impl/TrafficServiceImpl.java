@@ -3,6 +3,7 @@ package org.example.telecom_operations_dashboard.service.Impl;
 import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
 import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
 import org.example.telecom_operations_dashboard.dto.TopCellDto;
+import org.example.telecom_operations_dashboard.model.HeatmapCellView;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
 import org.example.telecom_operations_dashboard.model.TrafficRecord;
 import org.example.telecom_operations_dashboard.repository.HourlyTrafficRepository;
@@ -43,12 +44,15 @@ public class TrafficServiceImpl implements TrafficService {
                 .withSecond(0)
                 .withNano(0);
 
-        List<HourlyTrafficView> rows = hourlyTrafficRepository.findAllAtHour(hour);
+        List<HeatmapCellView> rows = hourlyTrafficRepository.findHeatmapWithGeometry(hour);
 
         return rows.stream()
                 .map(r -> new HeatmapCellDto(
                         r.getCellId(),
-                        r.getTotalActivity() != null ? r.getTotalActivity() : BigDecimal.ZERO
+                        r.getTotalActivity() != null ? r.getTotalActivity() : BigDecimal.ZERO,
+                        r.getBounds(),
+                        r.getLon(),
+                        r.getLat()
                 ))
                 .toList();
     }

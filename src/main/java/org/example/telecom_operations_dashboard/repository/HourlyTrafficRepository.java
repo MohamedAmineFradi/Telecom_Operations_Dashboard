@@ -1,5 +1,7 @@
 package org.example.telecom_operations_dashboard.repository;
 
+import org.example.telecom_operations_dashboard.model.GridCellView;
+import org.example.telecom_operations_dashboard.model.HeatmapCellView;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
 import org.example.telecom_operations_dashboard.model.TrafficRecord;
 import org.example.telecom_operations_dashboard.model.TrafficRecordId;
@@ -33,6 +35,28 @@ public interface HourlyTrafficRepository extends Repository<TrafficRecord, Traff
         WHERE hour = :hour
         """, nativeQuery = true)
     List<HourlyTrafficView> findAllAtHour(@Param("hour") OffsetDateTime hour);
+
+    @Query(value = """
+        SELECT v.cell_id AS cellId,
+               v.total_activity AS totalActivity,
+               g.bounds AS bounds,
+               ST_X(ST_Centroid(ST_Transform(g.geometry, 4326))) AS lon,
+               ST_Y(ST_Centroid(ST_Transform(g.geometry, 4326))) AS lat
+        FROM v_hourly_traffic v
+        JOIN dim_grid_milan g ON g.cell_id = v.cell_id
+        WHERE v.hour = :hour
+        """, nativeQuery = true)
+    List<HeatmapCellView> findHeatmapWithGeometry(@Param("hour") OffsetDateTime hour);
+
+    @Query(value = """
+        SELECT g.cell_id AS cellId,
+               g.bounds AS bounds,
+               ST_X(ST_Centroid(g.geometry)) AS centroidX,
+               ST_Y(ST_Centroid(g.geometry)) AS centroidY
+        FROM dim_grid_milan g
+        WHERE g.cell_id = :cellId
+        """, nativeQuery = true)
+    GridCellView findGridCell(@Param("cellId") Integer cellId);
 
 
 

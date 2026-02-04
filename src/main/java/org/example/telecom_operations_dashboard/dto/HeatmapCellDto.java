@@ -4,5 +4,8 @@ import java.math.BigDecimal;
 
 public record HeatmapCellDto(
         Integer cellId,
-        BigDecimal totalActivity
+        BigDecimal totalActivity,
+        String bounds,
+        Double lon,
+        Double lat
 ) {}
