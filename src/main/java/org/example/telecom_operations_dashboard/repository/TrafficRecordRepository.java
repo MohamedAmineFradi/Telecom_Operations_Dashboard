@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface TrafficRecordRepository extends JpaRepository<TrafficRecord, TrafficRecordId> {
 
@@ -23,4 +24,12 @@ public interface TrafficRecordRepository extends JpaRepository<TrafficRecord, Tr
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end
     );
+
+    Optional<TrafficRecord> findFirstByCellIdOrderByDatetimeDesc(Integer cellId);
+
+    @Query("SELECT COUNT(DISTINCT t.cellId) FROM TrafficRecord t")
+    long countDistinctCells();
+
+    @Query("SELECT MAX(t.datetime) FROM TrafficRecord t")
+    OffsetDateTime findLatestDatetime();
 }
