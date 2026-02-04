@@ -1,6 +1,7 @@
 package org.example.telecom_operations_dashboard.service.Impl;
 
 import jakarta.annotation.Nullable;
+import org.example.telecom_operations_dashboard.controller.exception.ResourceNotFoundException;
 import org.example.telecom_operations_dashboard.dto.AlertDto;
 import org.example.telecom_operations_dashboard.model.Alert;
 import org.example.telecom_operations_dashboard.repository.AlertRepository;
@@ -40,5 +41,14 @@ public class AlertServiceImpl implements AlertService {
                 a.getTimestamp() != null ? a.getTimestamp().toString() : null
             ))
             .toList();
+    }
+
+    @Override
+    public void resolveAlert(Long id) {
+        if (!alertRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Alert not found: " + id);
+        }
+        alertRepository.deleteById(id);
+        log.info("Resolved alert {}", id);
     }
 }

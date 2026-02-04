@@ -9,4 +9,6 @@ import java.util.List;
 public interface AlertService {
 
     List<AlertDto> getAlertsSince(@Nullable OffsetDateTime since);
+
+    void resolveAlert(Long id);
 }
