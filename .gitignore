@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Docker volumes & runtime data ###
+volumes/
+volume/
+
+### Monitoring binaries ###
+monitoring/jmx_prometheus_javaagent-*.jar
+
+### Logs ###
+*.log
