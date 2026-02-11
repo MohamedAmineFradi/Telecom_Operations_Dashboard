@@ -11,4 +11,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByTimestampAfterOrderByTimestampDesc(OffsetDateTime since);
 
     List<Alert> findAllByOrderByTimestampDesc();
+
+    boolean existsByCellIdAndTypeAndTimestamp(Integer cellId, String type, OffsetDateTime timestamp);
 }
