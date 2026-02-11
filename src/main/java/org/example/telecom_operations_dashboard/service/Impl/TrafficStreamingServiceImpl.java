@@ -49,6 +49,11 @@ public class TrafficStreamingServiceImpl implements TrafficStreamingService {
             event.setDatetime(hour);
             event.setCellId(view.getCellId());
             event.setTotalActivity(view.getTotalActivity());
+            event.setTotalSmsin(view.getTotalSmsin());
+            event.setTotalSmsout(view.getTotalSmsout());
+            event.setTotalCallin(view.getTotalCallin());
+            event.setTotalCallout(view.getTotalCallout());
+            event.setTotalInternet(view.getTotalInternet());
 
             kafkaTemplate.send(topic, view.getCellId().toString(), event);
             recordCount++;

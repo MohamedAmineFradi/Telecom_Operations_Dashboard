@@ -12,5 +12,9 @@ public class TrafficEvent {
     private OffsetDateTime datetime;
     private Integer cellId;
     private BigDecimal totalActivity;
-    // + sms, voice, data breakdown
+    private BigDecimal totalSmsin;
+    private BigDecimal totalSmsout;
+    private BigDecimal totalCallin;
+    private BigDecimal totalCallout;
+    private BigDecimal totalInternet;
 }
