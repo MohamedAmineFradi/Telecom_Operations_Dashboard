@@ -1,6 +1,7 @@
 package org.example.telecom_operations_dashboard.service.Impl;
 
 import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
 import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
@@ -17,11 +18,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 
 @Service
 public class TrafficServiceImpl implements TrafficService {
@@ -168,6 +171,50 @@ public class TrafficServiceImpl implements TrafficService {
                 return result;
     }
 
+    @Override
+    public List<CongestionCellDto> getCongestionAtHour(
+            OffsetDateTime hour,
+            int limit,
+            double warningThreshold,
+            double criticalThreshold
+    ) {
+        validateThresholds(warningThreshold, criticalThreshold);
+        OffsetDateTime bucket = truncate(hour, "hour");
+        List<HourlyTrafficView> rows = hourlyTrafficRepository.findAllAtHour(bucket);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+
+        BigDecimal maxActivity = rows.stream()
+                .map(r -> safeValue(r.getTotalActivity()))
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+
+        if (maxActivity.compareTo(BigDecimal.ZERO) <= 0) {
+            return rows.stream()
+                    .map(r -> new CongestionCellDto(
+                            r.getCellId(),
+                            safeValue(r.getTotalActivity()),
+                            0.0,
+                            "NORMAL"
+                    ))
+                    .toList();
+        }
+
+        return rows.stream()
+                .map(r -> {
+                    BigDecimal activity = safeValue(r.getTotalActivity());
+                    double score = activity.divide(maxActivity, 6, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100))
+                            .doubleValue();
+                    String severity = severityFor(score, warningThreshold, criticalThreshold);
+                    return new CongestionCellDto(r.getCellId(), activity, score, severity);
+                })
+                .sorted(Comparator.comparingDouble(CongestionCellDto::score).reversed())
+                .limit(Math.max(1, limit))
+                .toList();
+    }
+
         private OffsetDateTime truncate(OffsetDateTime datetime, String step) {
                 return switch (step) {
                         case "minute" -> datetime.withSecond(0).withNano(0);
@@ -190,6 +237,25 @@ public class TrafficServiceImpl implements TrafficService {
                 private BigDecimal voice = BigDecimal.ZERO;
                 private BigDecimal data = BigDecimal.ZERO;
         }
+
+                private void validateThresholds(double warningThreshold, double criticalThreshold) {
+                        if (warningThreshold < 0 || warningThreshold > 100 || criticalThreshold < 0 || criticalThreshold > 100) {
+                                throw new IllegalArgumentException("thresholds must be between 0 and 100");
+                        }
+                        if (warningThreshold >= criticalThreshold) {
+                                throw new IllegalArgumentException("warningThreshold must be < criticalThreshold");
+                        }
+                }
+
+                private String severityFor(double score, double warningThreshold, double criticalThreshold) {
+                        if (score >= criticalThreshold) {
+                                return "CRITICAL";
+                        }
+                        if (score >= warningThreshold) {
+                                return "WARNING";
+                        }
+                        return "NORMAL";
+                }
 
 
 }

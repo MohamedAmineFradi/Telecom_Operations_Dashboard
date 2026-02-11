@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
 import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
@@ -64,6 +65,17 @@ public class TrafficController {
         OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
         log.info("Hourly summary requested at {}", hourIso);
         return ResponseEntity.ok(trafficService.getHourlySummaryAtHour(hour));
+    }
+
+    @GetMapping("/congestion")
+    public ResponseEntity<List<CongestionCellDto>> getCongestion(
+            @RequestParam("hour") @NotBlank String hourIso,
+            @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit,
+            @RequestParam(name = "warn", defaultValue = "70") double warn,
+            @RequestParam(name = "crit", defaultValue = "90") double crit) {
+        OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
+        log.info("Congestion requested at {} (limit={}, warn={}, crit={})", hourIso, limit, warn, crit);
+        return ResponseEntity.ok(trafficService.getCongestionAtHour(hour, limit, warn, crit));
     }
 
     @GetMapping("/cells/{cellId}/timeseries")

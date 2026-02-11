@@ -1,6 +1,7 @@
 package org.example.telecom_operations_dashboard.service;
 
 import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
 import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
@@ -24,4 +25,11 @@ public interface TrafficService {
             OffsetDateTime to,
             String step
     );
+
+        List<CongestionCellDto> getCongestionAtHour(
+            OffsetDateTime hour,
+            int limit,
+            double warningThreshold,
+            double criticalThreshold
+        );
 }
