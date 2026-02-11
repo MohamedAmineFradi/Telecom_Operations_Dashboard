@@ -58,7 +58,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8082:8080"  # UI runs on 8080 internally → mapped to 8082 on host
+      - "0.0.0.0:8082:8080"  # UI runs on 8080 internally → mapped to 8082 on host
     environment:
       DYNAMIC_CONFIG_ENABLED: "true"
       KAFKA_CLUSTERS_0_NAME: "QUALIF CLUSTER"
