@@ -15,19 +15,30 @@ import java.time.OffsetDateTime;
 public class TrafficRecord {
 
     @Id
+    @Column(name = "datetime", nullable = false)
     private OffsetDateTime datetime;
 
     @Id
-    @Column(name = "cell_id")
+    @Column(name = "cell_id", nullable = false)
     private Integer cellId;
 
     @Id
+    @Column(name = "countrycode", nullable = false)
     private Integer countrycode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cell_id", insertable = false, updatable = false)
+    private GridCell gridCell;
+
+    @Column(name = "smsin", nullable = false)
     private BigDecimal smsin;
+    @Column(name = "smsout", nullable = false)
     private BigDecimal smsout;
+    @Column(name = "callin", nullable = false)
     private BigDecimal callin;
+    @Column(name = "callout", nullable = false)
     private BigDecimal callout;
+    @Column(name = "internet", nullable = false)
     private BigDecimal internet;
 
     // getters/setters
