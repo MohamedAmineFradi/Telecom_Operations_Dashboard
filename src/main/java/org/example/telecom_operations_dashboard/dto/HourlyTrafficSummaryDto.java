@@ -2,15 +2,12 @@ package org.example.telecom_operations_dashboard.dto;
 
 import java.math.BigDecimal;
 
-public record HeatmapCellDto(
-        Integer cellId,
+public record HourlyTrafficSummaryDto(
+        String hour,
         BigDecimal totalSmsin,
         BigDecimal totalSmsout,
         BigDecimal totalCallin,
         BigDecimal totalCallout,
         BigDecimal totalInternet,
-        BigDecimal totalActivity,
-        String bounds,
-        Double lon,
-        Double lat
+        BigDecimal totalActivity
 ) {}

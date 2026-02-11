@@ -4,5 +4,10 @@ import java.math.BigDecimal;
 
 public record TopCellDto(
         Integer cellId,
+        BigDecimal totalSmsin,
+        BigDecimal totalSmsout,
+        BigDecimal totalCallin,
+        BigDecimal totalCallout,
+        BigDecimal totalInternet,
         BigDecimal totalActivity
 ) {}

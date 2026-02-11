@@ -6,5 +6,10 @@ import java.time.Instant;
 public interface HourlyTrafficView {
     Instant getHour();
     Integer getCellId();
+    BigDecimal getTotalSmsin();
+    BigDecimal getTotalSmsout();
+    BigDecimal getTotalCallin();
+    BigDecimal getTotalCallout();
+    BigDecimal getTotalInternet();
     BigDecimal getTotalActivity();
 }

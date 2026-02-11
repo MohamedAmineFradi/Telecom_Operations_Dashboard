@@ -2,8 +2,11 @@ package org.example.telecom_operations_dashboard.service.Impl;
 
 import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
 import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
+import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
+import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
 import org.example.telecom_operations_dashboard.dto.TopCellDto;
 import org.example.telecom_operations_dashboard.model.HeatmapCellView;
+import org.example.telecom_operations_dashboard.model.HourlyTrafficSummaryView;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
 import org.example.telecom_operations_dashboard.model.TrafficRecord;
 import org.example.telecom_operations_dashboard.repository.HourlyTrafficRepository;
@@ -37,6 +40,46 @@ public class TrafficServiceImpl implements TrafficService {
         return hourlyTrafficRepository.findTopCellsAtHour(hour, limit);
     }
 
+        @Override
+        public List<HourlyCellDto> getAllCellsAtHour(OffsetDateTime hour) {
+                return hourlyTrafficRepository.findAllAtHour(hour).stream()
+                                .map(r -> new HourlyCellDto(
+                                                r.getCellId(),
+                                                safeValue(r.getTotalSmsin()),
+                                                safeValue(r.getTotalSmsout()),
+                                                safeValue(r.getTotalCallin()),
+                                                safeValue(r.getTotalCallout()),
+                                                safeValue(r.getTotalInternet()),
+                                                safeValue(r.getTotalActivity())
+                                ))
+                                .toList();
+        }
+
+        @Override
+        public HourlyTrafficSummaryDto getHourlySummaryAtHour(OffsetDateTime hour) {
+                HourlyTrafficSummaryView summary = hourlyTrafficRepository.findSummaryAtHour(hour);
+                if (summary == null) {
+                        return new HourlyTrafficSummaryDto(
+                                        hour.toString(),
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO
+                        );
+                }
+                return new HourlyTrafficSummaryDto(
+                                summary.getHour() != null ? summary.getHour().toString() : hour.toString(),
+                                safeValue(summary.getTotalSmsin()),
+                                safeValue(summary.getTotalSmsout()),
+                                safeValue(summary.getTotalCallin()),
+                                safeValue(summary.getTotalCallout()),
+                                safeValue(summary.getTotalInternet()),
+                                safeValue(summary.getTotalActivity())
+                );
+        }
+
     @Override
     public List<HeatmapCellDto> getHeatmapAt(OffsetDateTime datetime) {
         OffsetDateTime hour = datetime
@@ -49,6 +92,11 @@ public class TrafficServiceImpl implements TrafficService {
         return rows.stream()
                 .map(r -> new HeatmapCellDto(
                         r.getCellId(),
+                        r.getTotalSmsin() != null ? r.getTotalSmsin() : BigDecimal.ZERO,
+                        r.getTotalSmsout() != null ? r.getTotalSmsout() : BigDecimal.ZERO,
+                        r.getTotalCallin() != null ? r.getTotalCallin() : BigDecimal.ZERO,
+                        r.getTotalCallout() != null ? r.getTotalCallout() : BigDecimal.ZERO,
+                        r.getTotalInternet() != null ? r.getTotalInternet() : BigDecimal.ZERO,
                         r.getTotalActivity() != null ? r.getTotalActivity() : BigDecimal.ZERO,
                         r.getBounds(),
                         r.getLon(),
@@ -68,6 +116,11 @@ public class TrafficServiceImpl implements TrafficService {
         return topCells.stream()
                 .map(r -> new TopCellDto(
                         r.getCellId(),
+                        r.getTotalSmsin() != null ? r.getTotalSmsin() : java.math.BigDecimal.ZERO,
+                        r.getTotalSmsout() != null ? r.getTotalSmsout() : java.math.BigDecimal.ZERO,
+                        r.getTotalCallin() != null ? r.getTotalCallin() : java.math.BigDecimal.ZERO,
+                        r.getTotalCallout() != null ? r.getTotalCallout() : java.math.BigDecimal.ZERO,
+                        r.getTotalInternet() != null ? r.getTotalInternet() : java.math.BigDecimal.ZERO,
                         r.getTotalActivity() != null ? r.getTotalActivity() : java.math.BigDecimal.ZERO
                 ))
                 .toList();
