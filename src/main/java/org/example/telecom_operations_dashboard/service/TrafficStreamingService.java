@@ -11,4 +11,10 @@ public interface TrafficStreamingService {
     StreamSlotResultDto streamSlot(@Nullable OffsetDateTime slotDatetime);
 
     StreamStatusDto getStatus();
+    
+    void enableStreaming();
+    
+    void disableStreaming();
+    
+    boolean isStreamingEnabled();
 }
