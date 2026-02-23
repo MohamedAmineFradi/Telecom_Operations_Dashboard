@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: 'Telecom Dashboards'
+    orgId: 1
+    folder: 'Telecom Operations'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

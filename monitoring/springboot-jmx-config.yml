@@ -1,0 +1,54 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # JVM Memory
+  - pattern: "java.lang<type=Memory><(\\w+)MemoryUsage><(\\w+)>"
+    name: "jvm_memory_${1}_${2}"
+    type: GAUGE
+
+  # JVM Threads
+  - pattern: "java.lang<type=Threading><>(\\w+)"
+    name: "jvm_threads_${1}"
+    type: GAUGE
+
+  # JVM GC
+  - pattern: "java.lang<type=GarbageCollector, name=(.+)><>(\\w+)"
+    name: "jvm_gc_${2}"
+    labels:
+      gc: "$1"
+    type: GAUGE
+
+  # Spring Boot Application Metrics
+  - pattern: "org.springframework.boot<type=Endpoint, name=(.+)><>(\\w+)"
+    name: "springboot_endpoint_${1}_${2}"
+    type: GAUGE
+
+  # Kafka Producer/Consumer
+  - pattern: "kafka.producer<type=(.+), client-id=(.+), topic=(.+), partition=(.*)><>(\\w+)"
+    name: "kafka_producer_${1}"
+    labels:
+      client_id: "$2"
+      topic: "$3"
+      partition: "$4"
+    type: GAUGE
+
+  - pattern: "kafka.consumer<type=(.+), client-id=(.+), topic=(.+), partition=(.*)><>(\\w+)"
+    name: "kafka_consumer_${1}"
+    labels:
+      client_id: "$2"
+      topic: "$3"
+      partition: "$4"
+    type: GAUGE
+
+  # Database Connection Pool
+  - pattern: "org.springframework.boot<type=Endpoint, name=db><>(\\w+)"
+    name: "db_connection_${1}"
+    type: GAUGE
+
+  # HTTP Requests
+  - pattern: "http.server.requests<>(\\w+)"
+    name: "http_server_requests_${1}"
+    type: GAUGE
+
+  # Generic fallback
+  - pattern: ".*"

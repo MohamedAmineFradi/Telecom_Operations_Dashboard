@@ -6,15 +6,41 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
     show-sql: true
     open-in-view: false
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:29092
+  
+  jmx:
+    enabled: true
+  
+  cache:
+    type: simple
+    cache-names:
+      - heatmap
 
 traffic:
   kafka:
     topic: milan.traffic.raw
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,health,info,metrics"
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always
+
 springdoc:
   swagger-ui:
     enabled: true

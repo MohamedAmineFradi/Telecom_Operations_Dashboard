@@ -1,0 +1,262 @@
+{
+  "uid": "springboot-status",
+  "title": "Spring Boot Status - Robust Monitoring",
+  "tags": ["springboot", "status", "robust"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Health Status",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "up{job=~\"springboot|app.*\"}",
+          "legendFormat": "{{job}} - {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "yellow", "value": 0.5},
+              {"color": "green", "value": 1}
+            ]
+          },
+          "mappings": [
+            {"options": {"0": {"text": "DOWN", "color": "red"}}, "type": "value"},
+            {"options": {"1": {"text": "UP", "color": "green"}}, "type": "value"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Response Time (Average)",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 3, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.5},
+              {"color": "red", "value": 1}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Success Rate (%)",
+      "type": "stat",
+      "gridPos": {"x": 6, "y": 3, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_seconds_count{outcome=\"SUCCESS\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))) * 100",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 0.1},
+              {"color": "red", "value": 1}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Active Requests",
+      "type": "stat",
+      "gridPos": {"x": 12, "y": 3, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(http_server_requests_active_seconds_count)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Uptime",
+      "type": "stat",
+      "gridPos": {"x": 18, "y": 3, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{job=~\"springboot|app.*\"}",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dtdurations"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Request Rate by Endpoint",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 7, "w": 12, "h": 8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (uri, method) (rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "{{method}} {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "gradientMode": "opacity"
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Response Time Statistics",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 7, "w": 12, "h": 8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "Average",
+          "refId": "A"
+        },
+        {
+          "expr": "max(http_server_requests_seconds_max)",
+          "legendFormat": "Max",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "HTTP Status Codes Distribution",
+      "type": "piechart",
+      "gridPos": {"x": 0, "y": 15, "w": 8, "h": 8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right"},
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 9,
+      "title": "Error Rate Trend",
+      "type": "timeseries",
+      "gridPos": {"x": 8, "y": 15, "w": 8, "h": 8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[5m])) by (status)",
+          "legendFormat": "{{status}} errors",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 50
+          },
+          "color": {"mode": "palette-classic"}
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Request Success Rate",
+      "type": "gauge",
+      "gridPos": {"x": 16, "y": 15, "w": 8, "h": 8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(sum(rate(http_server_requests_seconds_count{outcome=\"SUCCESS\"}[1h])) / sum(rate(http_server_requests_seconds_count[1h]))) * 100",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 95,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": 95},
+              {"color": "yellow", "value": 99},
+              {"color": "green", "value": 99.9}
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "version": 1,
+  "time": {"from": "now-1h", "to": "now"},
+  "id": null
+}
