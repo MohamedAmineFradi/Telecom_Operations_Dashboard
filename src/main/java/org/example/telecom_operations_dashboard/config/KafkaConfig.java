@@ -2,6 +2,7 @@ package org.example.telecom_operations_dashboard.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.example.telecom_operations_dashboard.dto.TrafficEvent;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -19,10 +20,16 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
+    private final String bootstrapServers;
+
+    public KafkaConfig(@Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
+    }
+
     @Bean
     public ProducerFactory<String, TrafficEvent> trafficProducerFactory() {
         Map<String, Object> config = new HashMap<>();
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return new DefaultKafkaProducerFactory<>(config);
