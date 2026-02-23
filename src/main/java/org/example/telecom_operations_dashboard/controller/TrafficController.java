@@ -1,5 +1,7 @@
 package org.example.telecom_operations_dashboard.controller;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -12,7 +14,6 @@ import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
 import org.example.telecom_operations_dashboard.dto.TopCellDto;
 import org.example.telecom_operations_dashboard.controller.util.DateTimeParser;
-import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
 import org.example.telecom_operations_dashboard.service.TrafficService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +43,18 @@ public class TrafficController {
         return ResponseEntity.ok(trafficService.getHeatmapAt(datetime));
     }
 
-    @GetMapping("/top-cells")
+    @GetMapping("/ranking")
     public ResponseEntity<List<TopCellDto>> getTopCells(
+            @RequestParam("datetime") @NotBlank String datetimeIso,
+            @RequestParam(name = "limit", defaultValue = "10") @Min(1) int limit) {
+        OffsetDateTime datetime = DateTimeParser.parse(datetimeIso, "datetime");
+        log.info("Traffic ranking requested at {} with limit {}", datetimeIso, limit);
+        return ResponseEntity.ok(trafficService.getTopCells(datetime, limit));
+    }
+
+    // Alias for backward compatibility
+    @GetMapping("/top-cells")
+    public ResponseEntity<List<TopCellDto>> getTopCellsLegacy(
             @RequestParam("hour") @NotBlank String hourIso,
             @RequestParam(name = "limit", defaultValue = "10") @Min(1) int limit) {
         OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
@@ -78,9 +89,9 @@ public class TrafficController {
         return ResponseEntity.ok(trafficService.getCongestionAtHour(hour, limit, warn, crit));
     }
 
-    @GetMapping("/cells/{cellId}/timeseries")
+    @GetMapping("/timeseries")
     public ResponseEntity<List<CellTimeseriesPointDto>> getCellTimeseries(
-            @PathVariable("cellId") @Positive Integer cellId,
+            @RequestParam("cellId") @Positive Integer cellId,
             @RequestParam("from") @NotBlank String fromIso,
             @RequestParam("to") @NotBlank String toIso,
             @RequestParam(name = "step", defaultValue = "hour")
@@ -91,5 +102,22 @@ public class TrafficController {
         log.info("Timeseries requested cellId={}, from={}, to={}, step={}", cellId, fromIso, toIso, step);
         return ResponseEntity.ok(trafficService.getCellTimeseries(cellId, from, to, step));
     }
+
+    // Legacy endpoint - routes to timeseries
+    @GetMapping("/cells/{cellId}/timeseries")
+    public ResponseEntity<List<CellTimeseriesPointDto>> getCellTimeseriesLegacy(
+            @PathVariable("cellId") @Positive Integer cellId,
+            @RequestParam("from") @NotBlank String fromIso,
+            @RequestParam("to") @NotBlank String toIso,
+            @RequestParam(name = "step", defaultValue = "hour")
+            @Pattern(regexp = "hour|day|minute", message = "step must be hour, day, or minute") String step
+    ) {
+        OffsetDateTime from = DateTimeParser.parse(fromIso, "from");
+        OffsetDateTime to = DateTimeParser.parse(toIso, "to");
+        log.info("Timeseries (legacy) requested cellId={}, from={}, to={}, step={}", cellId, fromIso, toIso, step);
+        return ResponseEntity.ok(trafficService.getCellTimeseries(cellId, from, to, step));
+    }
+
+
 }
 

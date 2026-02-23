@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -138,6 +139,11 @@ public class TrafficServiceImpl implements TrafficService {
     ) {
                 if (from.isAfter(to)) {
                         throw new IllegalArgumentException("from must be <= to");
+                }
+                
+                long daysBetween = ChronoUnit.DAYS.between(from, to);
+                if (daysBetween > 7) {
+                        throw new IllegalArgumentException("Maximum date range is 7 days; requested " + daysBetween + " days");
                 }
 
                 String normalizedStep = step == null ? "hour" : step.toLowerCase();

@@ -7,6 +7,7 @@ import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
 import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
 import org.example.telecom_operations_dashboard.dto.TopCellDto;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -15,6 +16,8 @@ public interface TrafficService {
     public List<HourlyTrafficView> getTopCellsAtHour(OffsetDateTime hour, int limit);
     List<HourlyCellDto> getAllCellsAtHour(OffsetDateTime hour);
     HourlyTrafficSummaryDto getHourlySummaryAtHour(OffsetDateTime hour);
+    
+    @Cacheable(value = "heatmap", key = "#datetime.withMinute(0).withSecond(0).withNano(0)")
     List<HeatmapCellDto> getHeatmapAt(OffsetDateTime datetime);
 
     List<TopCellDto> getTopCells(OffsetDateTime datetime, int limit);
