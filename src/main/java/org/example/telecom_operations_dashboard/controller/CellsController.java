@@ -7,6 +7,8 @@ import org.example.telecom_operations_dashboard.dto.GridCellDto;
 import org.example.telecom_operations_dashboard.service.CellService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +32,12 @@ public class CellsController {
     public ResponseEntity<List<GridCellDto>> getAllCells() {
         log.info("All grid cells requested");
         return ResponseEntity.ok(cellService.getAllGridCells());
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<Page<GridCellDto>> getAllCellsPaged(Pageable pageable) {
+        log.info("Paginated grid cells requested with page size {}", pageable.getPageSize());
+        return ResponseEntity.ok(cellService.getAllGridCells(pageable));
     }
 
     @GetMapping("/{id}")

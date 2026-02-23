@@ -32,6 +32,7 @@ public class InsightsController {
     private final TrafficRecordRepository trafficRecordRepository;
     private final MobilityService mobilityService;
 
+    // Legacy endpoint - routes to getMobilityFlows for backward compatibility
     @GetMapping("/mobility/flows")
     public ResponseEntity<List<MobilityCellProvinceFlowDto>> getMobilityFlows(
             @RequestParam("hour") @NotBlank String hourIso,
@@ -41,6 +42,30 @@ public class InsightsController {
         OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
         log.info("Mobility flows requested at {} (cellId={}, provincia={}, limit={})", hourIso, cellId, provincia, limit);
         return ResponseEntity.ok(mobilityService.getMobilityFlowsAtHour(hour, cellId, provincia, limit));
+    }
+
+    // New explicit endpoint for cell-to-cell flows (intra-city)
+    @GetMapping("/mobility/cell-flows")
+    public ResponseEntity<List<MobilityCellProvinceFlowDto>> getCellFlows(
+            @RequestParam("hour") @NotBlank String hourIso,
+            @RequestParam(name = "fromCell", required = false) Integer fromCellId,
+            @RequestParam(name = "toCell", required = false) Integer toCellId,
+            @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit) {
+        OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
+        log.info("Cell flows requested at {} (fromCell={}, toCell={}, limit={})", hourIso, fromCellId, toCellId, limit);
+        return ResponseEntity.ok(mobilityService.getCellFlows(hour, fromCellId, toCellId, limit));
+    }
+
+    // New explicit endpoint for province-to-province flows (inter-provinces)
+    @GetMapping("/mobility/province-flows")
+    public ResponseEntity<List<MobilityCellProvinceFlowDto>> getProvinceFlows(
+            @RequestParam("hour") @NotBlank String hourIso,
+            @RequestParam(name = "from", required = false) String fromProvince,
+            @RequestParam(name = "to", required = false) String toProvince,
+            @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit) {
+        OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
+        log.info("Province flows requested at {} (from={}, to={}, limit={})", hourIso, fromProvince, toProvince, limit);
+        return ResponseEntity.ok(mobilityService.getProvinceFlows(hour, fromProvince, toProvince, limit));
     }
 
     @GetMapping("/mobility/province-summary")

@@ -12,6 +12,8 @@ import org.example.telecom_operations_dashboard.repository.TrafficRecordReposito
 import org.example.telecom_operations_dashboard.service.CellService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -82,5 +84,17 @@ public class CellServiceImpl implements CellService {
                         null
                 ))
                 .toList();
+    }
+
+    @Override
+    public Page<GridCellDto> getAllGridCells(Pageable pageable) {
+        Page<GridCell> cells = gridCellRepository.findAllOrderByCellId(pageable);
+        log.info("Fetched page of grid cells with size {}", pageable.getPageSize());
+        return cells.map(c -> new GridCellDto(
+                        c.getCellId(),
+                        c.getBounds(),
+                        null,
+                        null
+                ));
     }
 }

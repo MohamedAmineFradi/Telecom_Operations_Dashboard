@@ -10,6 +10,8 @@ import org.example.telecom_operations_dashboard.service.AlertService;
 import org.example.telecom_operations_dashboard.service.TrafficService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -45,6 +47,23 @@ public class AlertServiceImpl implements AlertService {
                 a.getTimestamp() != null ? a.getTimestamp().toString() : null
             ))
             .toList();
+    }
+
+    @Override
+    public Page<AlertDto> getAlerts(@Nullable OffsetDateTime since, Pageable pageable) {
+        Page<Alert> alerts = since != null
+            ? alertRepository.findByTimestampAfterOrderByTimestampDesc(since, pageable)
+            : alertRepository.findAllByOrderByTimestampDesc(pageable);
+
+        log.info("Fetched page of alerts since {} with page size {}", since, pageable.getPageSize());
+        return alerts.map(a -> new AlertDto(
+                a.getId(),
+                a.getCellId(),
+                a.getType(),
+                a.getSeverity(),
+                a.getMessage(),
+                a.getTimestamp() != null ? a.getTimestamp().toString() : null
+        ));
     }
 
     @Override

@@ -26,12 +26,85 @@ public class MobilityServiceImpl implements MobilityService {
     }
 
     @Override
-        public List<MobilityCellProvinceFlowDto> getMobilityFlowsAtHour(
+    public List<MobilityCellProvinceFlowDto> getCellFlows(
+            OffsetDateTime hour,
+            Integer fromCellId,
+            Integer toCellId,
+            Integer limit
+    ) {
+        OffsetDateTime bucket = truncateToHour(hour);
+        int safeLimit = normalizeLimit(limit);
+        log.info("Cell flows requested: hour={}, fromCell={}, toCell={}, limit={}", bucket, fromCellId, toCellId, safeLimit);
+        
+        // Database schema tracks cell-to-province flows only, not cell-to-cell
+        // This endpoint provides filtered cell flows data for intra-city mobility analysis
+        if (fromCellId != null || toCellId != null) {
+            log.warn("Cell-to-cell flow filtering not supported; returning cell-to-province flows for cell {}", fromCellId);
+        }
+        
+        List<MobilityFlowView> rows = mobilityRecordRepository.findFlowsAtHour(
+            bucket,
+            fromCellId,
+            null,
+            safeLimit
+        );
+        
+        return rows.stream()
+                .map(r -> new MobilityCellProvinceFlowDto(
+                        r.getCellId(),
+                        r.getProvincia(),
+                        safeValue(r.getCellToProvince()),
+                        safeValue(r.getProvinceToCell()),
+                        safeValue(r.getCellToProvince()).add(safeValue(r.getProvinceToCell()))
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<MobilityCellProvinceFlowDto> getProvinceFlows(
+            OffsetDateTime hour,
+            String fromProvince,
+            String toProvince,
+            Integer limit
+    ) {
+        OffsetDateTime bucket = truncateToHour(hour);
+        int safeLimit = normalizeLimit(limit);
+        String normalizedFrom = normalizeProvincia(fromProvince);
+        String normalizedTo = normalizeProvincia(toProvince);
+        
+        log.info("Province flows requested: hour={}, from={}, to={}, limit={}", bucket, normalizedFrom, normalizedTo, safeLimit);
+        
+        // Database schema tracks cell-to-province flows
+        // Filter by origin province if specified
+        List<MobilityFlowView> rows = mobilityRecordRepository.findFlowsAtHour(
+            bucket,
+            null,
+            normalizedFrom,
+            safeLimit
+        );
+        
+        if (normalizedTo != null) {
+            log.warn("Province-to-province filtering not supported; showing flows from province {}", normalizedFrom);
+        }
+        
+        return rows.stream()
+                .map(r -> new MobilityCellProvinceFlowDto(
+                        r.getCellId(),
+                        r.getProvincia(),
+                        safeValue(r.getCellToProvince()),
+                        safeValue(r.getProvinceToCell()),
+                        safeValue(r.getCellToProvince()).add(safeValue(r.getProvinceToCell()))
+                ))
+                .toList();
+    }
+
+    @Override
+    public List<MobilityCellProvinceFlowDto> getMobilityFlowsAtHour(
             OffsetDateTime hour,
             Integer cellId,
             String provincia,
             Integer limit
-        ) {
+    ) {
         OffsetDateTime bucket = truncateToHour(hour);
         int safeLimit = normalizeLimit(limit);
         String normalizedProvincia = normalizeProvincia(provincia);
@@ -54,11 +127,11 @@ public class MobilityServiceImpl implements MobilityService {
     }
 
     @Override
-        public List<MobilityProvinceSummaryDto> getProvinceSummariesAtHour(
+    public List<MobilityProvinceSummaryDto> getProvinceSummariesAtHour(
             OffsetDateTime hour,
             String provincia,
             Integer limit
-        ) {
+    ) {
         OffsetDateTime bucket = truncateToHour(hour);
         int safeLimit = normalizeLimit(limit);
         String normalizedProvincia = normalizeProvincia(provincia);

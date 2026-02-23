@@ -8,6 +8,8 @@ import org.example.telecom_operations_dashboard.controller.util.DateTimeParser;
 import org.example.telecom_operations_dashboard.service.AlertService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +39,16 @@ public class AlertsController {
         OffsetDateTime since = sinceIso != null ? DateTimeParser.parse(sinceIso, "since") : null;
         log.info("Alerts requested since {}", sinceIso);
         return ResponseEntity.ok(alertService.getAlertsSince(since));
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<Page<AlertDto>> getAlertsPaged(
+            @RequestParam(name = "since", required = false) String sinceIso,
+            Pageable pageable
+    ) {
+        OffsetDateTime since = sinceIso != null ? DateTimeParser.parse(sinceIso, "since") : null;
+        log.info("Paginated alerts requested since {} with page size {}", sinceIso, pageable.getPageSize());
+        return ResponseEntity.ok(alertService.getAlerts(since, pageable));
     }
 
     @PostMapping("/{id}/resolve")
