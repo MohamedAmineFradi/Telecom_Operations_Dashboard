@@ -1,12 +1,15 @@
 server:
   port: 8080
+
 spring:
   application:
-    name: eureka-client
+    name: ${SPRING_APPLICATION_NAME:telecom-dashboard}
+  
   datasource:
     url: jdbc:postgresql://localhost:5432/milan_telecom
     username: postgres
     password: postgres
+  
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,19 +17,16 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    show-sql: true
+    show-sql: false
     open-in-view: false
-
-  kafka:
-    bootstrap-servers: kafka:29092
-  
-  jmx:
-    enabled: true
   
   cache:
     type: simple
     cache-names:
       - heatmap
+  
+  kafka:
+    bootstrap-servers: kafka:29092
 
 traffic:
   kafka:
@@ -37,10 +37,26 @@ management:
     web:
       exposure:
         include: "prometheus,health,info,metrics"
+  
   metrics:
     export:
       prometheus:
         enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,200ms,500ms,1s,2s
+    enable:
+      jvm: true
+      process: true
+      system: true
+      tomcat: true
+      logback: true
+      jdbc: true
+      hikaricp: true
+      cache: true
+  
   endpoint:
     health:
       show-details: always
@@ -57,3 +73,13 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
+    metadata-map:
+      prometheus.path: /actuator/prometheus
+      prometheus.port: ${server.port}
+      service_group: "telecom"
