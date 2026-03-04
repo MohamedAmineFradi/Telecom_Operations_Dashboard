@@ -2,14 +2,27 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  # Telecom Services - Dynamic Eureka Service Discovery
+  - job_name: 'telecom-services'
+    eureka_sd_configs:
+      - server: 'http://eureka-server:8761/eureka'
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      # Keep only UP instances
+      - source_labels: [__meta_eureka_app_instance_status]
+        regex: 'UP'
+        action: keep
+      # Use Eureka app name as job label
+      - source_labels: [__meta_eureka_app_name]
+        target_label: job
+      # Preserve instance hostname
+      - source_labels: [__meta_eureka_instance_hostname]
+        target_label: instance
+
+  # Static infrastructure services
   - job_name: 'kafka'
     static_configs:
       - targets: ['kafka:7071']
-
-  - job_name: 'springboot'
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ['springboot:8080']
 
   - job_name: 'keycloak'
     metrics_path: /realms/master/metrics

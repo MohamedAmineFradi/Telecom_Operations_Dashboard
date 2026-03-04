@@ -1,19 +1,20 @@
 {
   "uid": "springboot-status",
-  "title": "Spring Boot Status - Robust Monitoring",
-  "tags": ["springboot", "status", "robust"],
+  "title": "Spring Boot Status - Dynamic Services Monitoring",
+  "tags": ["springboot", "status", "robust", "multi-service"],
   "timezone": "browser",
   "panels": [
+    
     {
       "id": 1,
       "title": "Service Health Status",
       "type": "stat",
-      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+      "gridPos": {"x": 0, "y": 5, "w": 24, "h": 3},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "up{job=~\"springboot|app.*\"}",
-          "legendFormat": "{{job}} - {{instance}}",
+          "expr": "max by (job) (up{job=~\"$service\"})",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -49,11 +50,12 @@
       "id": 2,
       "title": "Response Time (Average)",
       "type": "stat",
-      "gridPos": {"x": 0, "y": 3, "w": 6, "h": 4},
+      "gridPos": {"x": 0, "y": 8, "w": 6, "h": 4},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "expr": "sum by (job) (rate(http_server_requests_seconds_sum{job=~\"$service\"}[5m])) / sum by (job) (rate(http_server_requests_seconds_count{job=~\"$service\"}[5m]))",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -80,11 +82,12 @@
       "id": 3,
       "title": "Success Rate (%)",
       "type": "stat",
-      "gridPos": {"x": 6, "y": 3, "w": 6, "h": 4},
+      "gridPos": {"x": 6, "y": 8, "w": 6, "h": 4},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "(sum(rate(http_server_requests_seconds_count{outcome=\"SUCCESS\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))) * 100",
+          "expr": "100 * sum by (job) (increase(http_server_requests_seconds_count{outcome=\"SUCCESS\",job=~\"$service\"}[5m])) / clamp_min(sum by (job) (increase(http_server_requests_seconds_count{job=~\"$service\"}[5m])), 1)",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -97,9 +100,9 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 0.1},
-              {"color": "red", "value": 1}
+              {"color": "red", "value": 95},
+              {"color": "yellow", "value": 99},
+              {"color": "green", "value": 99.9}
             ]
           }
         }
@@ -109,11 +112,12 @@
       "id": 4,
       "title": "Active Requests",
       "type": "stat",
-      "gridPos": {"x": 12, "y": 3, "w": 6, "h": 4},
+      "gridPos": {"x": 12, "y": 8, "w": 6, "h": 4},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(http_server_requests_active_seconds_count)",
+          "expr": "sum by (job) (http_server_requests_active_seconds_gcount{job=~\"$service\"})",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ]
@@ -122,11 +126,11 @@
       "id": 5,
       "title": "Uptime",
       "type": "stat",
-      "gridPos": {"x": 18, "y": 3, "w": 6, "h": 4},
+      "gridPos": {"x": 18, "y": 8, "w": 6, "h": 4},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "time() - process_start_time_seconds{job=~\"springboot|app.*\"}",
+          "expr": "max by (job) (time() - process_start_time_seconds{job=\"$service\"})",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -141,11 +145,11 @@
       "id": 6,
       "title": "Request Rate by Endpoint",
       "type": "timeseries",
-      "gridPos": {"x": 0, "y": 7, "w": 12, "h": 8},
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by (uri, method) (rate(http_server_requests_seconds_count[5m]))",
+          "expr": "sum by (uri, method) (rate(http_server_requests_seconds_count{job=\"$service\"}[5m]))",
           "legendFormat": "{{method}} {{uri}}",
           "refId": "A"
         }
@@ -165,16 +169,16 @@
       "id": 7,
       "title": "Response Time Statistics",
       "type": "timeseries",
-      "gridPos": {"x": 12, "y": 7, "w": 12, "h": 8},
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"$service\"}[5m])) / sum(rate(http_server_requests_seconds_count{job=\"$service\"}[5m]))",
           "legendFormat": "Average",
           "refId": "A"
         },
         {
-          "expr": "max(http_server_requests_seconds_max)",
+          "expr": "max(http_server_requests_seconds_max{job=\"$service\"})",
           "legendFormat": "Max",
           "refId": "B"
         }
@@ -184,11 +188,11 @@
       "id": 8,
       "title": "HTTP Status Codes Distribution",
       "type": "piechart",
-      "gridPos": {"x": 0, "y": 15, "w": 8, "h": 8},
+      "gridPos": {"x": 0, "y": 20, "w": 8, "h": 8},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by (status) (rate(http_server_requests_seconds_count[5m]))",
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{job=\"$service\"}[5m]))",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -202,11 +206,11 @@
       "id": 9,
       "title": "Error Rate Trend",
       "type": "timeseries",
-      "gridPos": {"x": 8, "y": 15, "w": 8, "h": 8},
+      "gridPos": {"x": 8, "y": 20, "w": 8, "h": 8},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[5m])) by (status)",
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\",job=\"$service\"}[5m])) by (status) or on() vector(0)",
           "legendFormat": "{{status}} errors",
           "refId": "A"
         }
@@ -225,11 +229,11 @@
       "id": 10,
       "title": "Request Success Rate",
       "type": "gauge",
-      "gridPos": {"x": 16, "y": 15, "w": 8, "h": 8},
+      "gridPos": {"x": 16, "y": 20, "w": 8, "h": 8},
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "(sum(rate(http_server_requests_seconds_count{outcome=\"SUCCESS\"}[1h])) / sum(rate(http_server_requests_seconds_count[1h]))) * 100",
+          "expr": "100 * sum(increase(http_server_requests_seconds_count{outcome=\"SUCCESS\",job=\"$service\"}[1h])) / clamp_min(sum(increase(http_server_requests_seconds_count{job=\"$service\"}[1h])), 1)",
           "refId": "A"
         }
       ],
@@ -252,8 +256,377 @@
           }
         }
       }
+    },
+    {
+      "id": 11,
+      "title": "Method Performance - Execution Time",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 28, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "1000 * (sum by (method, uri) (rate(http_server_requests_seconds_sum{job=\"$service\"}[5m])) / clamp_min(sum by (method, uri) (rate(http_server_requests_seconds_count{job=\"$service\"}[5m])), 1e-9))",
+          "legendFormat": "{{method}} {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 100},
+              {"color": "red", "value": 500}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Method Performance - Call Count (Last 5m)",
+      "type": "stat",
+      "gridPos": {"x": 6, "y": 28, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (method, uri) (increase(http_server_requests_seconds_count{job=\"$service\"}[5m]))",
+          "legendFormat": "{{method}} {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Method Performance - Error Count (Last 5m)",
+      "type": "stat",
+      "gridPos": {"x": 12, "y": 28, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (status) (increase(http_server_requests_seconds_count{status=~\"4..|5..\",job=\"$service\"}[5m])) or on() vector(0)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 5}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Method Success Rate %",
+      "type": "stat",
+      "gridPos": {"x": 18, "y": 28, "w": 6, "h": 4},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * sum(increase(http_server_requests_seconds_count{outcome=\"SUCCESS\",job=\"$service\"}[5m])) / clamp_min(sum(increase(http_server_requests_seconds_count{job=\"$service\"}[5m])), 1)",
+          "legendFormat": "Success %",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 95},
+              {"color": "green", "value": 99}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Method Response Time Trend",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 32, "w": 12, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "1000 * (sum by (method, uri) (rate(http_server_requests_seconds_sum{job=\"$service\"}[5m])) / clamp_min(sum by (method, uri) (rate(http_server_requests_seconds_count{job=\"$service\"}[5m])), 1e-9))",
+          "legendFormat": "{{method}} {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table"},
+        "tooltip": {"mode": "multi"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "Method Error Rate Trend",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 32, "w": 12, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\",job=\"$service\"}[5m])) or vector(0)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {"calcs": ["mean", "max"], "displayMode": "table"},
+        "tooltip": {"mode": "multi"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "CPU Usage (%)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 38, "w": 8, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 * process_cpu_usage{job=\"$service\"}",
+          "legendFormat": "CPU %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 18,
+      "title": "Memory Usage (MB)",
+      "type": "timeseries",
+      "gridPos": {"x": 8, "y": 38, "w": 8, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (area) (jvm_memory_used_bytes{job=\"$service\"}) / 1024 / 1024",
+          "legendFormat": "{{area}} Used",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (area) (jvm_memory_committed_bytes{job=\"$service\"}) / 1024 / 1024",
+          "legendFormat": "{{area}} Committed",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 300},
+              {"color": "red", "value": 500}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 19,
+      "title": "JVM Heap Memory (MB)",
+      "type": "timeseries",
+      "gridPos": {"x": 16, "y": 38, "w": 8, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (id) (jvm_memory_committed_bytes{job=\"$service\",area=\"heap\"}) / 1024 / 1024",
+          "legendFormat": "{{id}} Used",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (id) (jvm_memory_max_bytes{job=\"$service\",area=\"heap\"}) / 1024 / 1024",
+          "legendFormat": "{{id}} Max",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decmbytes",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 300},
+              {"color": "red", "value": 450}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 20,
+      "title": "GC Statistics",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 44, "w": 12, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$service\"}[5m])",
+          "legendFormat": "GC Time {{gc}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(jvm_gc_pause_seconds_count{job=\"$service\"}[5m])",
+          "legendFormat": "GC Count {{gc}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "id": 21,
+      "title": "Thread Count",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 44, "w": 12, "h": 6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"$service\"}",
+          "legendFormat": "Live Threads",
+          "refId": "A"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{job=\"$service\"}",
+          "legendFormat": "Peak Threads",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20
+          }
+        }
+      }
     }
   ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Telecom Service (Multi-select for comparison)",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(up{job!~\"kafka|keycloak\"}, job)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "refresh": 1,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": ["$__all"]
+        }
+      }
+    ]
+  },
   "refresh": "10s",
   "schemaVersion": 36,
   "version": 1,
