@@ -1,31 +1,130 @@
 services:
-  springboot:
+  traffic-service:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: telecom-springboot
+      args:
+        BUILD_PROFILE: traffic-service
+        JAR_NAME: traffic-service.jar
+    container_name: telecom-traffic-service
     networks:
       - kafka-net
     ports:
-      - "8080:8080"   # Spring Boot app
-      - "7072:7072"   # JMX metrics for Spring Boot
+      - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://host.docker.internal:8761/eureka/
-      JAVA_OPTS: "-javaagent:/app/jmx_exporter.jar=7072:/app/springboot-jmx-config.yml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9998"
-    volumes:
-      - ./monitoring/springboot-jmx-config.yml:/app/springboot-jmx-config.yml
-      - ./monitoring/jmx_prometheus_javaagent-1.0.1.jar:/app/jmx_exporter.jar
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: TRAFFIC-SERVICE
     depends_on:
       kafka:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     restart: unless-stopped
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
+
+  alert-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_PROFILE: alert-service
+        JAR_NAME: alert-service.jar
+    container_name: telecom-alert-service
+    networks:
+      - kafka-net
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: ALERT-SERVICE
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: unless-stopped
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  cell-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_PROFILE: cell-service
+        JAR_NAME: cell-service.jar
+    container_name: telecom-cell-service
+    networks:
+      - kafka-net
+    ports:
+      - "8084:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: CELL-SERVICE
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: unless-stopped
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  mobility-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_PROFILE: mobility-service
+        JAR_NAME: mobility-service.jar
+    container_name: telecom-mobility-service
+    networks:
+      - kafka-net
+    ports:
+      - "8085:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: MOBILITY-SERVICE
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: unless-stopped
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server.Dockerfile
+    container_name: telecom-eureka
+    networks:
+      - kafka-net
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
 
   kafka:
     image: apache/kafka:4.1.1
@@ -139,6 +238,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     restart: unless-stopped
 
   grafana:
