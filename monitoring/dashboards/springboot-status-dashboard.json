@@ -550,61 +550,6 @@
           }
         }
       }
-    },
-    {
-      "id": 20,
-      "title": "GC Statistics",
-      "type": "timeseries",
-      "gridPos": {"x": 0, "y": 44, "w": 12, "h": 6},
-      "datasource": "Prometheus",
-      "targets": [
-        {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$service\"}[5m])",
-          "legendFormat": "GC Time {{gc}}",
-          "refId": "A"
-        },
-        {
-          "expr": "rate(jvm_gc_pause_seconds_count{job=\"$service\"}[5m])",
-          "legendFormat": "GC Count {{gc}}",
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 20
-          }
-        }
-      }
-    },
-    {
-      "id": 21,
-      "title": "Thread Count",
-      "type": "timeseries",
-      "gridPos": {"x": 12, "y": 44, "w": 12, "h": 6},
-      "datasource": "Prometheus",
-      "targets": [
-        {
-          "expr": "jvm_threads_live_threads{job=\"$service\"}",
-          "legendFormat": "Live Threads",
-          "refId": "A"
-        },
-        {
-          "expr": "jvm_threads_peak_threads{job=\"$service\"}",
-          "legendFormat": "Peak Threads",
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 20
-          }
-        }
-      }
     }
   ],
   "templating": {
