@@ -243,24 +243,31 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
-    container_name: telecom-grafana
-    networks:
-      - kafka-net
-    ports:
-      - "3000:3000"
-    user: "${UID:-1000}:${GID:-1000}"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: "admin"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/system-overview.json
-    volumes:
-      - ./volumes/grafana-data:/var/lib/grafana
-      - ./monitoring/grafana-provisioning-datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
-      - ./monitoring/grafana-provisioning-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
-      - ./monitoring/dashboards:/var/lib/grafana/dashboards
-    depends_on:
-      - prometheus
-    restart: unless-stopped
+      image: grafana/grafana:latest
+      container_name: telecom-grafana
+      networks:
+        - kafka-net
+      ports:
+        # Changed host port to 3001 so it doesn't conflict with Next.js on 3000
+        - "3000:3000" 
+      user: "${UID:-1000}:${GID:-1000}"
+      environment:
+        GF_SECURITY_ADMIN_PASSWORD: "admin"
+        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/system-overview.json
+        # --- NEW SETTINGS FOR NEXT.JS INTEGRATION ---
+        GF_SECURITY_ALLOW_EMBEDDING: "true"
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+        # Optional: If you run into cross-origin cookie issues in the browser, uncomment this:
+        # GF_SECURITY_COOKIE_SAMESITE: "none"
+      volumes:
+        - ./volumes/grafana-data:/var/lib/grafana
+        - ./monitoring/grafana-provisioning-datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+        - ./monitoring/grafana-provisioning-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+        - ./monitoring/dashboards:/var/lib/grafana/dashboards
+      depends_on:
+        - prometheus
+      restart: unless-stopped
 
 networks:
   kafka-net:
