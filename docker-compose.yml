@@ -136,32 +136,21 @@ services:
       - "9092:9092"   # External clients
       - "7071:7071"   # Prometheus metrics
     environment:
-      # KRaft configuration 
+      # Used by manual format command below
       CLUSTER_ID: "4L6g3nShT8qIEaYHq5ZqWA"
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: "broker,controller"
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
 
-      # Listeners
-      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,INTERNAL://0.0.0.0:29092"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092,INTERNAL://kafka:29092"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT"
-      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
-
-      # Performance
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_COORDINATOR_REBALANCE_PROTOCOLS: "classic,consumer"
-
+      # Keep Kafka memory bounded while leaving native/off-heap headroom
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx384m"
+      
       # JMX Exporter configuration
-      KAFKA_OPTS: "-javaagent:/opt/kafka/jmx_exporter.jar=7071:/opt/kafka/kafka-jmx-config.yml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9999"
+      KAFKA_OPTS: "-javaagent:/opt/kafka/jmx_exporter.jar=7071:/opt/kafka/kafka-jmx-config.yml"
     volumes:
       - ./volumes/kafka-data:/opt/kafka/data
       - ./monitoring/kafka-server.properties:/opt/kafka/config/server.properties
       - ./monitoring/jmx_prometheus_javaagent-1.0.1.jar:/opt/kafka/jmx_exporter.jar
       - ./monitoring/kafka-jmx-config.yml:/opt/kafka/kafka-jmx-config.yml
+    mem_limit: 1024m
+    restart: unless-stopped
     command: >
       bash -c "
         if [ ! -f /opt/kafka/data/meta.properties ]; then
@@ -173,11 +162,11 @@ services:
         exec /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
       "
     healthcheck:
-      test: ["CMD-SHELL", "KAFKA_OPTS= /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server=localhost:9092 > /dev/null"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/9092'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   kafkaui:
     image: provectuslabs/kafka-ui:latest

@@ -31,6 +31,7 @@ spring:
 traffic:
   kafka:
     topic: milan.traffic.raw
+    client-bootstrap-servers: ${TRAFFIC_KAFKA_CLIENT_BOOTSTRAP_SERVERS:localhost:9092}
 
 management:
   endpoints:
