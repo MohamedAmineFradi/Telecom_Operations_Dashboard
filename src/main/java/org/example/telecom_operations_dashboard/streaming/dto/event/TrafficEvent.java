@@ -1,4 +1,4 @@
-package org.example.telecom_operations_dashboard.dto;
+package org.example.telecom_operations_dashboard.streaming.dto.event;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 public class TrafficEvent {
     private OffsetDateTime datetime;
     private Integer cellId;
+    private Integer countrycode;
     private BigDecimal totalActivity;
     private BigDecimal totalSmsin;
     private BigDecimal totalSmsout;

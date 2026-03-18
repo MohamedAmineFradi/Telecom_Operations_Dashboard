@@ -7,7 +7,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @EnableCaching
-@EnableScheduling
 @EnableDiscoveryClient
 @SpringBootApplication
 public class TelecomOperationsDashboardApplication {
