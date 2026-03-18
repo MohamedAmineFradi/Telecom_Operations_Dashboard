@@ -7,16 +7,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
-import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
-import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
-import org.example.telecom_operations_dashboard.dto.TopCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CongestionCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HeatmapCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyTrafficSummaryDto;
+import org.example.telecom_operations_dashboard.dto.traffic.TopCellDto;
 import org.example.telecom_operations_dashboard.controller.util.DateTimeParser;
 import org.example.telecom_operations_dashboard.service.TrafficService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequestMapping("/api/traffic")
 @RequiredArgsConstructor
 @Validated
+@ConditionalOnProperty(name = "app.service", havingValue = "traffic")
 public class TrafficController {
 
     private static final Logger log = LoggerFactory.getLogger(TrafficController.class);

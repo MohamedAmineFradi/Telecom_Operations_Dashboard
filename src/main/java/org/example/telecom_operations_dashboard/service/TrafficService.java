@@ -1,11 +1,11 @@
 package org.example.telecom_operations_dashboard.service;
 
-import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
-import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
-import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
-import org.example.telecom_operations_dashboard.dto.TopCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CongestionCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HeatmapCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyTrafficSummaryDto;
+import org.example.telecom_operations_dashboard.dto.traffic.TopCellDto;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
 import org.springframework.cache.annotation.Cacheable;
 

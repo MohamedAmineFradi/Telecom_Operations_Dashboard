@@ -1,8 +1,8 @@
-package org.example.telecom_operations_dashboard.dto;
+package org.example.telecom_operations_dashboard.dto.traffic;
 
 import java.math.BigDecimal;
 
-public record TopCellDto(
+public record HourlyCellDto(
         Integer cellId,
         BigDecimal totalSmsin,
         BigDecimal totalSmsout,

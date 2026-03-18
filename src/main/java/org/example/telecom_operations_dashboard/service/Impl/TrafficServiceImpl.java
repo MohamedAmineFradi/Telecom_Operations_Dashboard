@@ -1,11 +1,11 @@
 package org.example.telecom_operations_dashboard.service.Impl;
 
-import org.example.telecom_operations_dashboard.dto.CellTimeseriesPointDto;
-import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
-import org.example.telecom_operations_dashboard.dto.HeatmapCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyCellDto;
-import org.example.telecom_operations_dashboard.dto.HourlyTrafficSummaryDto;
-import org.example.telecom_operations_dashboard.dto.TopCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CellTimeseriesPointDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CongestionCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HeatmapCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyCellDto;
+import org.example.telecom_operations_dashboard.dto.traffic.HourlyTrafficSummaryDto;
+import org.example.telecom_operations_dashboard.dto.traffic.TopCellDto;
 import org.example.telecom_operations_dashboard.model.HeatmapCellView;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficSummaryView;
 import org.example.telecom_operations_dashboard.model.HourlyTrafficView;
@@ -15,6 +15,7 @@ import org.example.telecom_operations_dashboard.repository.TrafficRecordReposito
 import org.example.telecom_operations_dashboard.service.TrafficService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Comparator;
 
 @Service
+@ConditionalOnProperty(name = "app.service", havingValue = "traffic")
 public class TrafficServiceImpl implements TrafficService {
 
         private static final Logger log = LoggerFactory.getLogger(TrafficServiceImpl.class);
