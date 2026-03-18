@@ -18,12 +18,25 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: TRAFFIC-SERVICE
+      APP_SERVICE: traffic
+      APP_STREAMING_ENABLED: "true"
+      JAVA_TOOL_OPTIONS: >-
+        -XX:+UseContainerSupport
+        -Xms96m
+        -Xmx384m
+        -XX:MaxDirectMemorySize=96m
+        -XX:MaxMetaspaceSize=192m
+        -XX:ReservedCodeCacheSize=64m
+        -XX:+UseG1GC
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: unless-stopped
+    mem_reservation: 384m
+    mem_limit: 1024m
+    memswap_limit: 2048m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -47,12 +60,17 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: ALERT-SERVICE
+      APP_SERVICE: alert
+      APP_STREAMING_ENABLED: "false"
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    memswap_limit: 1024m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -76,12 +94,17 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: CELL-SERVICE
+      APP_SERVICE: cell
+      APP_STREAMING_ENABLED: "false"
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    memswap_limit: 1024m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -105,12 +128,24 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: MOBILITY-SERVICE
+      APP_SERVICE: mobility
+      APP_STREAMING_ENABLED: "true"
+      JAVA_TOOL_OPTIONS: >-
+        -XX:+UseContainerSupport
+        -Xms96m
+        -Xmx256m
+        -XX:MaxMetaspaceSize=192m
+        -XX:ReservedCodeCacheSize=48m
+        -XX:+UseG1GC
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    memswap_limit: 1024m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -124,6 +159,17 @@ services:
       - kafka-net
     ports:
       - "8761:8761"
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -XX:+UseContainerSupport
+        -Xms64m
+        -Xmx256m
+        -XX:MaxMetaspaceSize=96m
+        -XX:ReservedCodeCacheSize=48m
+        -XX:+UseG1GC
+    mem_reservation: 128m
+    mem_limit: 384m
+    memswap_limit: 768m
     restart: unless-stopped
 
   kafka:
@@ -134,22 +180,26 @@ services:
       - kafka-net
     ports:
       - "9092:9092"   # External clients
-      - "7071:7071"   # Prometheus metrics
     environment:
       # Used by manual format command below
       CLUSTER_ID: "4L6g3nShT8qIEaYHq5ZqWA"
 
-      # Keep Kafka memory bounded while leaving native/off-heap headroom
-      KAFKA_HEAP_OPTS: "-Xms256m -Xmx384m"
-      
-      # JMX Exporter configuration
-      KAFKA_OPTS: "-javaagent:/opt/kafka/jmx_exporter.jar=7071:/opt/kafka/kafka-jmx-config.yml"
+      # Ultra-conservative profile for Docker Desktop/laptop memory constraints.
+      KAFKA_HEAP_OPTS: >-
+        -Xms128m
+        -Xmx256m
+        -XX:MaxDirectMemorySize=128m
+        -XX:MaxMetaspaceSize=96m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=100
+        -XX:+ExplicitGCInvokesConcurrent
     volumes:
       - ./volumes/kafka-data:/opt/kafka/data
       - ./monitoring/kafka-server.properties:/opt/kafka/config/server.properties
-      - ./monitoring/jmx_prometheus_javaagent-1.0.1.jar:/opt/kafka/jmx_exporter.jar
-      - ./monitoring/kafka-jmx-config.yml:/opt/kafka/kafka-jmx-config.yml
+    # Keep hard RAM cap small, but allow swap cushion to avoid immediate OOM-kill spikes.
+    mem_reservation: 512m
     mem_limit: 1024m
+    memswap_limit: 2048m
     restart: unless-stopped
     command: >
       bash -c "
@@ -166,7 +216,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   kafkaui:
     image: provectuslabs/kafka-ui:latest

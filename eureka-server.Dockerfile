@@ -20,7 +20,7 @@ RUN cat > pom.xml << 'EOF'
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>4.0.3</version>
         <relativePath/>
     </parent>
 
@@ -28,7 +28,7 @@ RUN cat > pom.xml << 'EOF'
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <spring-cloud.version>2025.1.1</spring-cloud.version>
     </properties>
 
     <dependencies>

@@ -4,11 +4,11 @@ server:
 spring:
   application:
     name: ${SPRING_APPLICATION_NAME:telecom-dashboard}
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/milan_telecom
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/milan_telecom}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   
   jpa:
     hibernate:
@@ -26,12 +26,29 @@ spring:
       - heatmap
   
   kafka:
-    bootstrap-servers: kafka:29092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
+    streams:
+      application-id: telecom-streams
+      auto-startup: true
+      state-dir: /tmp/kafka-streams
+      properties:
+        num.stream.threads: 1
+        cache.max.bytes.buffering: 10485760
+        commit.interval.ms: 2000
 
-traffic:
-  kafka:
-    topic: milan.traffic.raw
-    client-bootstrap-servers: ${TRAFFIC_KAFKA_CLIENT_BOOTSTRAP_SERVERS:localhost:9092}
+app:
+  service: ${APP_SERVICE:traffic}
+  streaming:
+    enabled: ${APP_STREAMING_ENABLED:false}
+
+kafka:
+  topics:
+    sms: activity.sms
+    call: activity.call
+    internet: activity.internet
+    mobility: activity.mobility
+    traffic-realtime: activity.traffic.realtime
+    mobility-realtime: activity.mobility.realtime
 
 management:
   endpoints:
