@@ -1,7 +1,7 @@
-package org.example.telecom_operations_dashboard.service;
+package org.example.telecom_operations_dashboard.streaming.service;
 
-import org.example.telecom_operations_dashboard.dto.MobilityCellProvinceFlowDto;
-import org.example.telecom_operations_dashboard.dto.MobilityProvinceSummaryDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityCellProvinceFlowDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityProvinceSummaryDto;
 
 import java.time.OffsetDateTime;
 import java.util.List;

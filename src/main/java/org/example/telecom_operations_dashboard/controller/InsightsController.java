@@ -4,14 +4,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.example.telecom_operations_dashboard.controller.util.DateTimeParser;
-import org.example.telecom_operations_dashboard.dto.MobilityCellProvinceFlowDto;
-import org.example.telecom_operations_dashboard.dto.MobilityProvinceSummaryDto;
-import org.example.telecom_operations_dashboard.dto.NetworkStatsDto;
+import org.example.telecom_operations_dashboard.dto.insight.NetworkStatsDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityCellProvinceFlowDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityProvinceSummaryDto;
 import org.example.telecom_operations_dashboard.repository.AlertRepository;
 import org.example.telecom_operations_dashboard.repository.TrafficRecordRepository;
-import org.example.telecom_operations_dashboard.service.MobilityService;
+import org.example.telecom_operations_dashboard.streaming.service.MobilityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.service", havingValue = "mobility")
 public class InsightsController {
 
     private static final Logger log = LoggerFactory.getLogger(InsightsController.class);

@@ -1,13 +1,14 @@
-package org.example.telecom_operations_dashboard.service.Impl;
+package org.example.telecom_operations_dashboard.streaming.service.impl;
 
-import org.example.telecom_operations_dashboard.dto.MobilityCellProvinceFlowDto;
-import org.example.telecom_operations_dashboard.dto.MobilityProvinceSummaryDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityCellProvinceFlowDto;
+import org.example.telecom_operations_dashboard.dto.mobility.MobilityProvinceSummaryDto;
 import org.example.telecom_operations_dashboard.model.MobilityFlowView;
 import org.example.telecom_operations_dashboard.model.MobilityProvinceSummaryView;
 import org.example.telecom_operations_dashboard.repository.MobilityRecordRepository;
-import org.example.telecom_operations_dashboard.service.MobilityService;
+import org.example.telecom_operations_dashboard.streaming.service.MobilityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.service", havingValue = "mobility")
 public class MobilityServiceImpl implements MobilityService {
 
     private static final Logger log = LoggerFactory.getLogger(MobilityServiceImpl.class);
