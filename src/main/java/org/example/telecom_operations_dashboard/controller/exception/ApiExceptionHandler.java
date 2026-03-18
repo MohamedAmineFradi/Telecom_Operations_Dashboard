@@ -8,14 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.time.format.DateTimeParseException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -43,10 +39,41 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleStaticResourceNotFound(NoResourceFoundException ex, HttpServletRequest request) {
+        // Expected when an endpoint is intentionally absent (e.g. /api/stream/* when streaming is disabled)
+        log.debug("No resource for path {}", request.getRequestURI());
+        ApiError error = new ApiError(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public ResponseEntity<Void> handleAsyncRequestNotUsable(AsyncRequestNotUsableException ex, HttpServletRequest request) {
+        log.debug("Client disconnected while writing response on {}", request.getRequestURI());
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<?> handleAll(Exception ex, HttpServletRequest request) {
+        if (isBrokenPipe(ex)) {
+            log.debug("Client disconnected while writing response on {}", request.getRequestURI());
+            return ResponseEntity.noContent().build();
+        }
+
         log.error("Unhandled exception", ex);
         ApiError error = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    private boolean isBrokenPipe(Throwable ex) {
+        Throwable current = ex;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null && msg.toLowerCase().contains("broken pipe")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
