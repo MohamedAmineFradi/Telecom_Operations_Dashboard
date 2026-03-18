@@ -1,17 +1,19 @@
 package org.example.telecom_operations_dashboard.service.Impl;
 
 import org.example.telecom_operations_dashboard.controller.exception.ResourceNotFoundException;
-import org.example.telecom_operations_dashboard.dto.ProvinceDto;
+import org.example.telecom_operations_dashboard.dto.province.ProvinceDto;
 import org.example.telecom_operations_dashboard.model.Province;
 import org.example.telecom_operations_dashboard.repository.ProvinceRepository;
 import org.example.telecom_operations_dashboard.service.ProvinceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.service", havingValue = "cell")
 public class ProvinceServiceImpl implements ProvinceService {
 
     private static final Logger log = LoggerFactory.getLogger(ProvinceServiceImpl.class);

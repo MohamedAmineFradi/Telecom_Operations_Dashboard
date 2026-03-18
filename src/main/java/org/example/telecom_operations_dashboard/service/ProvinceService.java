@@ -1,6 +1,6 @@
 package org.example.telecom_operations_dashboard.service;
 
-import org.example.telecom_operations_dashboard.dto.ProvinceDto;
+import org.example.telecom_operations_dashboard.dto.province.ProvinceDto;
 
 import java.util.List;
 

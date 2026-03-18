@@ -2,10 +2,11 @@ package org.example.telecom_operations_dashboard.controller;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.example.telecom_operations_dashboard.dto.ProvinceDto;
+import org.example.telecom_operations_dashboard.dto.province.ProvinceDto;
 import org.example.telecom_operations_dashboard.service.ProvinceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/provinces")
 @RequiredArgsConstructor
 @Validated
+@ConditionalOnProperty(name = "app.service", havingValue = "cell")
 public class ProvincesController {
 
     private static final Logger log = LoggerFactory.getLogger(ProvincesController.class);

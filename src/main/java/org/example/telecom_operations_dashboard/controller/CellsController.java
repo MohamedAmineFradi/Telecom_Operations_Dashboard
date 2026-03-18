@@ -2,11 +2,12 @@ package org.example.telecom_operations_dashboard.controller;
 
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.example.telecom_operations_dashboard.dto.CellDetailsDto;
-import org.example.telecom_operations_dashboard.dto.GridCellDto;
+import org.example.telecom_operations_dashboard.dto.cell.CellDetailsDto;
+import org.example.telecom_operations_dashboard.dto.cell.GridCellDto;
 import org.example.telecom_operations_dashboard.service.CellService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.List;
 @RequestMapping("/api/cells")
 @RequiredArgsConstructor
 @Validated
+@ConditionalOnProperty(name = "app.service", havingValue = "cell")
 public class CellsController {
 
     private static final Logger log = LoggerFactory.getLogger(CellsController.class);

@@ -1,8 +1,8 @@
 package org.example.telecom_operations_dashboard.service.Impl;
 
 import org.example.telecom_operations_dashboard.controller.exception.ResourceNotFoundException;
-import org.example.telecom_operations_dashboard.dto.CellDetailsDto;
-import org.example.telecom_operations_dashboard.dto.GridCellDto;
+import org.example.telecom_operations_dashboard.dto.cell.CellDetailsDto;
+import org.example.telecom_operations_dashboard.dto.cell.GridCellDto;
 import org.example.telecom_operations_dashboard.model.GridCell;
 import org.example.telecom_operations_dashboard.model.GridCellView;
 import org.example.telecom_operations_dashboard.model.TrafficRecord;
@@ -12,6 +12,7 @@ import org.example.telecom_operations_dashboard.repository.TrafficRecordReposito
 import org.example.telecom_operations_dashboard.service.CellService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.service", havingValue = "cell")
 public class CellServiceImpl implements CellService {
 
     private static final Logger log = LoggerFactory.getLogger(CellServiceImpl.class);

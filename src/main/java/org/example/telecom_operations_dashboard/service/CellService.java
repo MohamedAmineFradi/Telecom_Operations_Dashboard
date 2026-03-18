@@ -1,7 +1,7 @@
 package org.example.telecom_operations_dashboard.service;
 
-import org.example.telecom_operations_dashboard.dto.CellDetailsDto;
-import org.example.telecom_operations_dashboard.dto.GridCellDto;
+import org.example.telecom_operations_dashboard.dto.cell.CellDetailsDto;
+import org.example.telecom_operations_dashboard.dto.cell.GridCellDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
