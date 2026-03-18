@@ -2,14 +2,15 @@ package org.example.telecom_operations_dashboard.service.Impl;
 
 import jakarta.annotation.Nullable;
 import org.example.telecom_operations_dashboard.controller.exception.ResourceNotFoundException;
-import org.example.telecom_operations_dashboard.dto.AlertDto;
-import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
+import org.example.telecom_operations_dashboard.dto.alert.AlertDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CongestionCellDto;
 import org.example.telecom_operations_dashboard.model.Alert;
 import org.example.telecom_operations_dashboard.repository.AlertRepository;
 import org.example.telecom_operations_dashboard.service.AlertService;
 import org.example.telecom_operations_dashboard.service.TrafficService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
+@ConditionalOnProperty(name = "app.service", havingValue = "alert")
 public class AlertServiceImpl implements AlertService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertServiceImpl.class);

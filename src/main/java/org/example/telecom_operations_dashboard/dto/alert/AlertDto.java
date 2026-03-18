@@ -1,4 +1,4 @@
-package org.example.telecom_operations_dashboard.dto;
+package org.example.telecom_operations_dashboard.dto.alert;
 
 public record AlertDto(
         Long id,

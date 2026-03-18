@@ -3,11 +3,12 @@ package org.example.telecom_operations_dashboard.controller;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.example.telecom_operations_dashboard.dto.AlertDto;
+import org.example.telecom_operations_dashboard.dto.alert.AlertDto;
 import org.example.telecom_operations_dashboard.controller.util.DateTimeParser;
 import org.example.telecom_operations_dashboard.service.AlertService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/alerts")
 @RequiredArgsConstructor
 @Validated
+@ConditionalOnProperty(name = "app.service", havingValue = "alert")
 public class AlertsController {
 
     private static final Logger log = LoggerFactory.getLogger(AlertsController.class);

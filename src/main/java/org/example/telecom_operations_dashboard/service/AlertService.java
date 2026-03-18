@@ -1,8 +1,8 @@
 package org.example.telecom_operations_dashboard.service;
 
 import jakarta.annotation.Nullable;
-import org.example.telecom_operations_dashboard.dto.AlertDto;
-import org.example.telecom_operations_dashboard.dto.CongestionCellDto;
+import org.example.telecom_operations_dashboard.dto.alert.AlertDto;
+import org.example.telecom_operations_dashboard.dto.traffic.CongestionCellDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
