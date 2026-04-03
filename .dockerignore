@@ -1,0 +1,24 @@
+# VCS / IDE
+.git
+.gitignore
+.idea
+.vscode
+
+# Build outputs (keep only runnable jars for Docker COPY target/${JAR_NAME})
+target/*
+!target/*.jar
+Dockerfile*
+docker-compose*.yml
+
+# Runtime volumes and local data
+volumes/
+
+# Monitoring assets not needed for app image builds
+monitoring/
+
+# Docs / local notes
+docs/
+
+# OS noise
+.DS_Store
+*.log

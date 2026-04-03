@@ -2,41 +2,117 @@ services:
   traffic-service:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        BUILD_PROFILE: traffic-service
-        JAR_NAME: traffic-service.jar
+      dockerfile: traffic-service/Dockerfile
     container_name: telecom-traffic-service
     networks:
       - kafka-net
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: TRAFFIC-SERVICE
-      APP_SERVICE: traffic
       APP_STREAMING_ENABLED: "true"
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
       JAVA_TOOL_OPTIONS: >-
         -XX:+UseContainerSupport
-        -Xms96m
-        -Xmx384m
-        -XX:MaxDirectMemorySize=96m
-        -XX:MaxMetaspaceSize=192m
-        -XX:ReservedCodeCacheSize=64m
+        -Xms2g
+        -Xmx2g
+        -XX:MaxDirectMemorySize=256m
+        -XX:MaxMetaspaceSize=256m
+        -XX:ReservedCodeCacheSize=128m
         -XX:+UseG1GC
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
+    volumes:
+      - ./volumes/traffic-state:/var/lib/kafka-streams
     restart: unless-stopped
-    mem_reservation: 384m
-    mem_limit: 1024m
-    memswap_limit: 2048m
+    mem_reservation: 1024m
+    mem_limit: 3072m
+    memswap_limit: 4096m
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+  sms-service:
+    build:
+      context: .
+      dockerfile: sms-service/Dockerfile
+    container_name: telecom-sms-service
+    networks:
+      - kafka-net
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: SMS-SERVICE
+      APP_STREAMING_ENABLED: "true"
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    volumes:
+      - ./volumes/sms-state:/var/lib/kafka-streams
+    restart: unless-stopped
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  call-service:
+    build:
+      context: .
+      dockerfile: call-service/Dockerfile
+    container_name: telecom-call-service
+    networks:
+      - kafka-net
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: CALL-SERVICE
+      APP_STREAMING_ENABLED: "true"
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    volumes:
+      - ./volumes/call-state:/var/lib/kafka-streams
+    restart: unless-stopped
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  internet-service:
+    build:
+      context: .
+      dockerfile: internet-service/Dockerfile
+    container_name: telecom-internet-service
+    networks:
+      - kafka-net
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: INTERNET-SERVICE
+      APP_STREAMING_ENABLED: "true"
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    volumes:
+      - ./volumes/internet-state:/var/lib/kafka-streams
+    restart: unless-stopped
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -44,15 +120,12 @@ services:
   alert-service:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        BUILD_PROFILE: alert-service
-        JAR_NAME: alert-service.jar
+      dockerfile: alert-service/Dockerfile
     container_name: telecom-alert-service
     networks:
       - kafka-net
     ports:
-      - "8083:8080"
+      - "8083:8083"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -60,17 +133,17 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: ALERT-SERVICE
-      APP_SERVICE: alert
       APP_STREAMING_ENABLED: "false"
+      TRAFFIC_SERVICE_BASE_URL: http://traffic-service:8080
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
     restart: unless-stopped
-    mem_reservation: 256m
-    mem_limit: 1024m
-    memswap_limit: 1024m
+    mem_reservation: 1024m
+    mem_limit: 3072m
+    memswap_limit: 4096m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -78,15 +151,12 @@ services:
   cell-service:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        BUILD_PROFILE: cell-service
-        JAR_NAME: cell-service.jar
+      dockerfile: cell-service/Dockerfile
     container_name: telecom-cell-service
     networks:
       - kafka-net
     ports:
-      - "8084:8080"
+      - "8084:8084"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -94,7 +164,6 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: CELL-SERVICE
-      APP_SERVICE: cell
       APP_STREAMING_ENABLED: "false"
     depends_on:
       kafka:
@@ -102,9 +171,9 @@ services:
       eureka-server:
         condition: service_started
     restart: unless-stopped
-    mem_reservation: 256m
-    mem_limit: 1024m
-    memswap_limit: 1024m
+    mem_reservation: 1024m
+    mem_limit: 3072m
+    memswap_limit: 4096m
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
@@ -112,61 +181,77 @@ services:
   mobility-service:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        BUILD_PROFILE: mobility-service
-        JAR_NAME: mobility-service.jar
+      dockerfile: mobility-service/Dockerfile
     container_name: telecom-mobility-service
     networks:
       - kafka-net
     ports:
-      - "8085:8080"
+      - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: MOBILITY-SERVICE
-      APP_SERVICE: mobility
       APP_STREAMING_ENABLED: "true"
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
       JAVA_TOOL_OPTIONS: >-
         -XX:+UseContainerSupport
-        -Xms96m
-        -Xmx256m
-        -XX:MaxMetaspaceSize=192m
-        -XX:ReservedCodeCacheSize=48m
+        -Xms2g
+        -Xmx2g
+        -XX:MaxMetaspaceSize=256m
+        -XX:ReservedCodeCacheSize=128m
         -XX:+UseG1GC
     depends_on:
       kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
+    volumes:
+      - ./volumes/mobility-state:/var/lib/kafka-streams
     restart: unless-stopped
-    mem_reservation: 256m
-    mem_limit: 1024m
-    memswap_limit: 1024m
+    mem_reservation: 1024m
+    mem_limit: 3072m
+    memswap_limit: 4096m
+    extra_hosts:
+      - "milan_etl_postgres:host-gateway"
+      - "host.docker.internal:host-gateway"
+
+  producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    container_name: telecom-producer
+    networks:
+      - kafka-net
+    ports:
+      - "8089:8080"
+    environment:
+      DB_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
+      DB_USER: postgres
+      DB_PASS: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+      EUREKA_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    restart: unless-stopped
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
 
   eureka-server:
-    build:
-      context: .
-      dockerfile: eureka-server.Dockerfile
+    image: steeltoeoss/eureka-server:latest
     container_name: telecom-eureka
     networks:
       - kafka-net
     ports:
       - "8761:8761"
     environment:
-      JAVA_TOOL_OPTIONS: >-
-        -XX:+UseContainerSupport
-        -Xms64m
-        -Xmx256m
-        -XX:MaxMetaspaceSize=96m
-        -XX:ReservedCodeCacheSize=48m
-        -XX:+UseG1GC
+      - EUREKA_CLIENT_REGISTERWITH_EUREKA=false
+      - EUREKA_CLIENT_FETCHREGISTRY=false
+      - EUREKA_INSTANCE_HOSTNAME=eureka-server
     mem_reservation: 128m
     mem_limit: 384m
     memswap_limit: 768m
@@ -193,13 +278,17 @@ services:
         -XX:+UseG1GC
         -XX:MaxGCPauseMillis=100
         -XX:+ExplicitGCInvokesConcurrent
+      KAFKA_OPTS: >-
+        -javaagent:/opt/kafka/monitoring/jmx_prometheus_javaagent-1.0.1.jar=7071:/opt/kafka/monitoring/kafka-jmx-config.yml
     volumes:
       - ./volumes/kafka-data:/opt/kafka/data
       - ./monitoring/kafka-server.properties:/opt/kafka/config/server.properties
+      - ./monitoring/jmx_prometheus_javaagent-1.0.1.jar:/opt/kafka/monitoring/jmx_prometheus_javaagent-1.0.1.jar:ro
+      - ./monitoring/kafka-jmx-config.yml:/opt/kafka/monitoring/kafka-jmx-config.yml:ro
     # Keep hard RAM cap small, but allow swap cushion to avoid immediate OOM-kill spikes.
-    mem_reservation: 512m
-    mem_limit: 1024m
-    memswap_limit: 2048m
+    mem_reservation: 1024m
+    mem_limit: 3072m
+    memswap_limit: 4096m
     restart: unless-stopped
     command: >
       bash -c "
@@ -219,7 +308,7 @@ services:
       start_period: 60s
 
   kafkaui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafkaui
     networks:
       - kafka-net
@@ -261,7 +350,7 @@ services:
       retries: 3
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.54.1
     container_name: telecom-prometheus
     networks:
       - kafka-net
@@ -282,7 +371,7 @@ services:
     restart: unless-stopped
 
   grafana:
-      image: grafana/grafana:latest
+      image: grafana/grafana:11.5.2
       container_name: telecom-grafana
       networks:
         - kafka-net
