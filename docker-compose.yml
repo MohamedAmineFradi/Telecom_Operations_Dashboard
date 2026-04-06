@@ -137,6 +137,9 @@ services:
       SPRING_APPLICATION_NAME: ALERT-SERVICE
       APP_STREAMING_ENABLED: "false"
       CELL_SERVICE_BASE_URL: http://cell-service:8102
+      SPRING_MAIL_HOST: maildev
+      SPRING_MAIL_PORT: 1025
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_USE_TYPE_HEADERS: "false"
     depends_on:
       kafka:
         condition: service_healthy
@@ -440,6 +443,16 @@ services:
       depends_on:
         - prometheus
       restart: unless-stopped
+
+  maildev:
+    image: maildev/maildev
+    container_name: telecom-maildev
+    networks:
+      - kafka-net
+    ports:
+      - "1080:1080" # Web UI
+      - "1025:1025" # SMTP
+    restart: unless-stopped
 
 networks:
   kafka-net:

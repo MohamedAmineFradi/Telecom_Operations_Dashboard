@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.telecom_operations_dashboard.alert.client.RestCellInfoClient;
 import org.telecom_operations_dashboard.common.dto.cell.CellDetailsDto;
+import org.telecom_operations_dashboard.alert.service.EmailService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -28,15 +29,18 @@ public class AlertServiceImpl implements AlertService {
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
     private final RestCellInfoClient restCellInfoClient;
+    private final EmailService emailService;
 
     public AlertServiceImpl(
             AlertRepository alertRepository,
             AlertMapper alertMapper,
-            RestCellInfoClient restCellInfoClient
+            RestCellInfoClient restCellInfoClient,
+            EmailService emailService
     ) {
         this.alertRepository = alertRepository;
         this.alertMapper = alertMapper;
         this.restCellInfoClient = restCellInfoClient;
+        this.emailService = emailService;
     }
 
     @Override
@@ -106,5 +110,13 @@ public class AlertServiceImpl implements AlertService {
 
         alertRepository.save(alert);
         log.info("Asynchronous alert generated for cell {} (Severity: {})", event.getCellId(), event.getSeverity());
+
+        if ("HIGH".equals(event.getSeverity())) {
+            emailService.sendHighCongestionAlert(
+                String.valueOf(event.getCellId()),
+                event.getSeverity(),
+                alert.getMessage()
+            );
+        }
     }
 }

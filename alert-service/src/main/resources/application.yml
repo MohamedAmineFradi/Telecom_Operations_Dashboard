@@ -22,6 +22,16 @@ spring:
       properties:
         spring.json.trusted.packages: org.telecom_operations_dashboard.common.dto.event
         spring.json.value.default.type: org.telecom_operations_dashboard.common.dto.event.CongestionEvent
+        spring.json.use.type.headers: false
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 
 eureka:
   client:
@@ -32,8 +42,11 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
+
 app:
   service: alert
+  operator:
+    email: ${APP_OPERATOR_EMAIL:operator@telecom.com}
 
 management:
   endpoints:
