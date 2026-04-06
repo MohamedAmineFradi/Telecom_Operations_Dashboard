@@ -1,0 +1,54 @@
+services:
+  producer-service:
+    image: producer-producer-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telecom-producer
+    networks:
+      - kafka-net
+    ports:
+      - "8090:8080"
+    environment:
+      DB_URL: jdbc:postgresql://host.docker.internal:5432/milan_telecom
+      DB_USER: postgres
+      DB_PASS: postgres
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      PRODUCER_POLL_INTERVAL_MS: 10000
+      PRODUCER_POLL_INITIAL_DELAY_MS: ${PRODUCER_POLL_INITIAL_DELAY_MS:-60000}
+      PRODUCER_MOBILITY_POLL_INITIAL_DELAY_MS: ${PRODUCER_MOBILITY_POLL_INITIAL_DELAY_MS:-90000}
+      PRODUCER_REPLAY_START: ${PRODUCER_REPLAY_START:-2013-11-01T00:00:00Z}
+      PRODUCER_REPLAY_END: ${PRODUCER_REPLAY_END:-2013-11-07T23:59:59Z}
+      PRODUCER_REPLAY_STEP: ${PRODUCER_REPLAY_STEP:-PT1H}
+      PRODUCER_REPLAY_BATCH_SIZE: ${PRODUCER_REPLAY_BATCH_SIZE:-25}
+      PRODUCER_KAFKA_HEALTH_ENABLED: ${PRODUCER_KAFKA_HEALTH_ENABLED:-false}
+      MANAGEMENT_HEALTH_KAFKA_ENABLED: ${MANAGEMENT_HEALTH_KAFKA_ENABLED:-false}
+      MANAGEMENT_PROMETHEUS_ENABLED: ${MANAGEMENT_PROMETHEUS_ENABLED:-false}
+      EUREKA_ENABLED: ${EUREKA_ENABLED:-true}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka}
+      JAVA_TOOL_OPTIONS: >-
+        -XX:+UseContainerSupport
+        -Xms64m
+        -Xmx192m
+        -XX:MaxMetaspaceSize=128m
+        -XX:MaxDirectMemorySize=32m
+        -XX:ReservedCodeCacheSize=64m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+    mem_limit: 768m
+    memswap_limit: 1536m
+    mem_reservation: 384m
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/liveness | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+networks:
+  kafka-net:
+    external: true
+    name: telecom_operations_dashboard_kafka-net

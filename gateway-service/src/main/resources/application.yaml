@@ -1,0 +1,72 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Expose-Headers Vary, RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          '[/**]':
+              allowedOrigins:
+                - "http://localhost:3000"
+                - "http://localhost:3001"
+                - "http://127.0.0.1:3000"
+                - "http://127.0.0.1:3001"
+              allowedMethods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - OPTIONS
+              allowedHeaders: "*"
+              exposedHeaders:
+                - "Content-Type"
+                - "X-Custom-Header"
+              allowCredentials: true        
+              maxAge: 3600
+      routes:
+        - id: traffic-service
+          uri: lb://TRAFFIC-SERVICE
+          predicates:
+            - Path=/api/traffic/**
+        - id: sms-service
+          uri: lb://SMS-SERVICE
+          predicates:
+            - Path=/api/sms/**
+        - id: call-service
+          uri: lb://CALL-SERVICE
+          predicates:
+            - Path=/api/call/**
+        - id: internet-service
+          uri: lb://INTERNET-SERVICE
+          predicates:
+            - Path=/api/internet/**
+        - id: alert-service
+          uri: lb://ALERT-SERVICE
+          predicates:
+            - Path=/api/alerts/**
+        - id: cell-service
+          uri: lb://CELL-SERVICE
+          predicates:
+            - Path=/api/cells/**
+        - id: province-service
+          uri: lb://CELL-SERVICE
+          predicates:
+            - Path=/api/provinces/**
+        - id: mobility-service
+          uri: lb://MOBILITY-SERVICE
+          predicates:
+              - Path=/api/mobility/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
