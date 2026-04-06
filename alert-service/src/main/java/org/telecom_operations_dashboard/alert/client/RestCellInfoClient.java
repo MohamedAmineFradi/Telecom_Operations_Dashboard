@@ -16,7 +16,7 @@ public class RestCellInfoClient {
 
     public RestCellInfoClient(
             RestClient.Builder restClientBuilder,
-            @Value("${app.clients.cell-base-url:${CELL_SERVICE_BASE_URL:http://localhost:8082}}") String cellBaseUrl
+            @Value("${CELL_SERVICE_BASE_URL:http://cell-service:8102}") String cellBaseUrl
     ) {
         this.restClient = restClientBuilder
                 .baseUrl(cellBaseUrl)

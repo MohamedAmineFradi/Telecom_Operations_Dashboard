@@ -7,7 +7,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8080:8080"
+      - "8103:8103"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -25,6 +25,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       eureka-server:
         condition: service_started
     volumes:
@@ -44,7 +46,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8086:8086"
+      - "8105:8105"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -71,7 +73,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8087:8087"
+      - "8106:8106"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -98,7 +100,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8088:8088"
+      - "8107:8107"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -125,7 +127,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8083:8083"
+      - "8101:8101"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -134,10 +136,12 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: ALERT-SERVICE
       APP_STREAMING_ENABLED: "false"
-      TRAFFIC_SERVICE_BASE_URL: http://traffic-service:8080
+      CELL_SERVICE_BASE_URL: http://cell-service:8102
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       eureka-server:
         condition: service_started
     restart: unless-stopped
@@ -156,7 +160,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8084:8084"
+      - "8102:8102"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -186,7 +190,7 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8085:8085"
+      - "8104:8104"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -195,8 +199,8 @@ services:
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
       JAVA_TOOL_OPTIONS: >-
         -XX:+UseContainerSupport
-        -Xms2g
-        -Xmx2g
+        -Xms1g
+        -Xmx1g
         -XX:MaxMetaspaceSize=256m
         -XX:ReservedCodeCacheSize=128m
         -XX:+UseG1GC
@@ -223,23 +227,43 @@ services:
     networks:
       - kafka-net
     ports:
-      - "8089:8080"
+      - "8108:8108"
     environment:
       DB_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       DB_USER: postgres
       DB_PASS: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PRODUCER_POLL_INTERVAL_MS: ${PRODUCER_POLL_INTERVAL_MS:-300000}
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       EUREKA_ENABLED: "true"
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       eureka-server:
         condition: service_started
     restart: unless-stopped
     extra_hosts:
       - "milan_etl_postgres:host-gateway"
       - "host.docker.internal:host-gateway"
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    container_name: telecom-gateway
+    networks:
+      - kafka-net
+    ports:
+      - "8090:8090"
+    environment:
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: GATEWAY-SERVICE
+    depends_on:
+      eureka-server:
+        condition: service_started
+    restart: unless-stopped
 
   eureka-server:
     image: steeltoeoss/eureka-server:latest
@@ -307,6 +331,24 @@ services:
       retries: 5
       start_period: 60s
 
+  kafka-init:
+    image: apache/kafka:4.1.1
+    container_name: telecom-kafka-init
+    networks:
+      - kafka-net
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["/bin/bash", "-ec"]
+    command: >
+      '
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic simulation.clock --partitions 1 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.mobility --partitions 1 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.traffic --partitions 1 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic alerts.congestion --partitions 1 --replication-factor 1;
+      '
+
   kafkaui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: kafkaui
@@ -321,6 +363,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   keycloak:
@@ -381,7 +425,7 @@ services:
       user: "${UID:-1000}:${GID:-1000}"
       environment:
         GF_SECURITY_ADMIN_PASSWORD: "admin"
-        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/system-overview.json
+        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/springboot-status-dashboard.json
         # --- NEW SETTINGS FOR NEXT.JS INTEGRATION ---
         GF_SECURITY_ALLOW_EMBEDDING: "true"
         GF_AUTH_ANONYMOUS_ENABLED: "true"

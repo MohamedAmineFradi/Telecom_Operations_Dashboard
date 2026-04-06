@@ -4,11 +4,9 @@ import jakarta.annotation.Nullable;
 import org.telecom_operations_dashboard.common.exception.ResourceNotFoundException;
 import org.telecom_operations_dashboard.alert.mapper.AlertMapper;
 import org.telecom_operations_dashboard.common.dto.alert.AlertDto;
-import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.alert.model.Alert;
 import org.telecom_operations_dashboard.alert.repository.AlertRepository;
 import org.telecom_operations_dashboard.alert.service.AlertService;
-import org.telecom_operations_dashboard.alert.client.TrafficCongestionClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,18 +26,15 @@ public class AlertServiceImpl implements AlertService {
     private static final Logger log = LoggerFactory.getLogger(AlertServiceImpl.class);
 
     private final AlertRepository alertRepository;
-    private final TrafficCongestionClient trafficCongestionClient;
     private final AlertMapper alertMapper;
     private final RestCellInfoClient restCellInfoClient;
 
     public AlertServiceImpl(
             AlertRepository alertRepository,
-            TrafficCongestionClient trafficCongestionClient,
             AlertMapper alertMapper,
             RestCellInfoClient restCellInfoClient
     ) {
         this.alertRepository = alertRepository;
-        this.trafficCongestionClient = trafficCongestionClient;
         this.alertMapper = alertMapper;
         this.restCellInfoClient = restCellInfoClient;
     }
@@ -76,48 +71,40 @@ public class AlertServiceImpl implements AlertService {
     }
 
     @Override
-    public List<AlertDto> generateCongestionAlerts(
-            OffsetDateTime hour,
-            int limit,
-            double warningThreshold,
-            double criticalThreshold
-    ) {
-        List<CongestionCellDto> congestion = trafficCongestionClient
-            .fetchCongestion(hour, limit, warningThreshold, criticalThreshold);
-        List<Alert> created = congestion.stream()
-                .filter(c -> !"NORMAL".equals(c.severity()))
-                .filter(c -> !alertRepository.existsByCellIdAndTypeAndTimestamp(c.cellId(), "CONGESTION", hour))
-                .map(c -> {
-                    Alert alert = new Alert();
-                    alert.setCellId(c.cellId());
-                    alert.setType("CONGESTION");
-                    alert.setSeverity(c.severity());
-                    // Fetch cell details for location info
-                    CellDetailsDto cellDetails = restCellInfoClient.fetchCellDetails(c.cellId());
-                    String locationInfo = "";
-                    if (cellDetails != null) {
-                        locationInfo = String.format(
-                            " [bounds: %s, centroid: (%.5f, %.5f)]",
-                            cellDetails.bounds() != null ? cellDetails.bounds() : "N/A",
-                            cellDetails.centroidX() != null ? cellDetails.centroidX() : 0.0,
-                            cellDetails.centroidY() != null ? cellDetails.centroidY() : 0.0
-                        );
-                    }
-                    alert.setMessage(
-                        "Congestion score " + String.format("%.2f", c.score()) + "% at hour " + hour + locationInfo
-                    );
-                    alert.setTimestamp(hour);
-                    return alert;
-                })
-                .toList();
-
-        if (!created.isEmpty()) {
-            alertRepository.saveAll(created);
+    public void handleCongestionEvent(org.telecom_operations_dashboard.common.dto.event.CongestionEvent event) {
+        if ("LOW".equals(event.getSeverity())) {
+            return;
         }
 
-        log.info("Generated {} congestion alerts at hour {}", created.size(), hour);
-        return created.stream()
-            .map(alertMapper::toDto)
-                .toList();
+        // Avoid duplicate alerts for the same cell and hour
+        if (alertRepository.existsByCellIdAndTypeAndTimestamp(event.getCellId(), "CONGESTION", event.getHour())) {
+            log.debug("Alert already exists for cell {} at hour {}", event.getCellId(), event.getHour());
+            return;
+        }
+
+        Alert alert = new Alert();
+        alert.setCellId(event.getCellId());
+        alert.setType("CONGESTION");
+        alert.setSeverity(event.getSeverity());
+        alert.setTimestamp(event.getHour());
+
+        // Fetch cell details for location info
+        CellDetailsDto cellDetails = restCellInfoClient.fetchCellDetails(event.getCellId());
+        String locationInfo = "";
+        if (cellDetails != null) {
+            locationInfo = String.format(
+                " [bounds: %s, centroid: (%.5f, %.5f)]",
+                cellDetails.bounds() != null ? cellDetails.bounds() : "N/A",
+                cellDetails.centroidX() != null ? cellDetails.centroidX() : 0.0,
+                cellDetails.centroidY() != null ? cellDetails.centroidY() : 0.0
+            );
+        }
+
+        alert.setMessage(
+            "Congestion score " + String.format("%.2f", event.getScore()) + "% at hour " + event.getHour() + locationInfo
+        );
+
+        alertRepository.save(alert);
+        log.info("Asynchronous alert generated for cell {} (Severity: {})", event.getCellId(), event.getSeverity());
     }
 }

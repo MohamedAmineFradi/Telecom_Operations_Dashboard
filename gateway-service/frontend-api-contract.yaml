@@ -1,0 +1,1091 @@
+openapi: 3.0.3
+info:
+  title: Telecom Dashboard Gateway Business API Contract
+  version: 1.0.0
+  description: |
+    Frontend contract for business APIs exposed via gateway-service.
+    Base URL is gateway-service (default localhost:8090).
+    Event timestamps are simulation timestamps and are expected in range:
+    2013-11-01T00:00:00Z .. 2013-11-07T23:59:59Z.
+
+servers:
+  - url: http://localhost:8090
+
+tags:
+  - name: traffic
+  - name: sms
+  - name: call
+  - name: internet
+  - name: alerts
+  - name: cells
+  - name: provinces
+  - name: mobility
+
+paths:
+  /api/traffic/raw/stream:
+    get:
+      tags: [traffic]
+      summary: Raw traffic SSE stream
+      responses:
+        "200":
+          description: text/event-stream of TrafficEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/traffic/current/stream:
+    get:
+      tags: [traffic]
+      summary: Traffic heatmap SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of HourlyTrafficDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/traffic/heatmap/stream:
+    get:
+      tags: [traffic]
+      summary: Traffic heatmap SSE stream for hour
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - $ref: '#/components/parameters/IntervalMs'
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: text/event-stream of HourlyTrafficDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/traffic/congestion/stream:
+    get:
+      tags: [traffic]
+      summary: Congestion SSE stream for hour
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - $ref: '#/components/parameters/IntervalMs'
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: text/event-stream of CongestionCellDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/sms/raw/stream:
+    get:
+      tags: [sms]
+      summary: Raw SMS SSE stream
+      responses:
+        "200":
+          description: text/event-stream of SmsEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/sms/current/stream:
+    get:
+      tags: [sms]
+      summary: Current SMS SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of HourlySmsDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/call/raw/stream:
+    get:
+      tags: [call]
+      summary: Raw call SSE stream
+      responses:
+        "200":
+          description: text/event-stream of CallEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/call/current/stream:
+    get:
+      tags: [call]
+      summary: Current call SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of HourlyCallDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/internet/raw/stream:
+    get:
+      tags: [internet]
+      summary: Raw internet SSE stream
+      responses:
+        "200":
+          description: text/event-stream of InternetEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/internet/current/stream:
+    get:
+      tags: [internet]
+      summary: Current internet SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of HourlyInternetDto[]
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/alerts:
+    get:
+      tags: [alerts]
+      summary: List alerts
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertDto'
+
+  /api/alerts/page:
+    get:
+      tags: [alerts]
+      summary: Paged alerts
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        "200":
+          description: Paged AlertDto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageAlertDto'
+
+  /api/alerts/{id}/resolve:
+    post:
+      tags: [alerts]
+      summary: Resolve alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Resolved
+
+  /api/cells:
+    get:
+      tags: [cells]
+      summary: List all cells
+      responses:
+        "200":
+          description: Grid cell list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GridCellDto'
+
+  /api/cells/page:
+    get:
+      tags: [cells]
+      summary: Paged cells
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - $ref: '#/components/parameters/Sort'
+      responses:
+        "200":
+          description: Paged GridCellDto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageGridCellDto'
+
+  /api/cells/{id}:
+    get:
+      tags: [cells]
+      summary: Cell details by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cell details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CellDetailsDto'
+
+  /api/provinces:
+    get:
+      tags: [provinces]
+      summary: List all provinces
+      responses:
+        "200":
+          description: Province list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProvinceDto'
+
+  /api/provinces/{provincia}:
+    get:
+      tags: [provinces]
+      summary: Province details
+      parameters:
+        - name: provincia
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Province payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvinceDto'
+
+  /api/mobility/raw/stream:
+    get:
+      tags: [mobility]
+      summary: Raw mobility SSE stream
+      responses:
+        "200":
+          description: text/event-stream of MobilityEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/cell-flows:
+    get:
+      tags: [mobility]
+      summary: Cell flow query
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/LimitMobility'
+      responses:
+        "200":
+          description: Mobility flows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MobilityCellProvinceFlowDto'
+
+  /api/mobility/province-flows:
+    get:
+      tags: [mobility]
+      summary: Province flow query
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/LimitMobility'
+      responses:
+        "200":
+          description: Mobility flows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MobilityCellProvinceFlowDto'
+
+  /api/mobility/province-summary:
+    get:
+      tags: [mobility]
+      summary: Province summary query
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/LimitMobility'
+      responses:
+        "200":
+          description: Province summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MobilityProvinceSummaryDto'
+
+  /api/mobility/stats:
+    get:
+      tags: [mobility]
+      summary: Realtime mobility stats
+      responses:
+        "200":
+          description: Stats payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkStatsDto'
+
+  /api/mobility/mobility/stream:
+    get:
+      tags: [mobility]
+      summary: Unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/current/stream:
+    get:
+      tags: [mobility]
+      summary: Alias of unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/flows/stream:
+    get:
+      tags: [mobility]
+      summary: Alias of unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/cell-flows/stream:
+    get:
+      tags: [mobility]
+      summary: Alias of unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/province-flows/stream:
+    get:
+      tags: [mobility]
+      summary: Alias of unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/mobility/province-summary/stream:
+    get:
+      tags: [mobility]
+      summary: Alias of unified mobility SSE stream
+      parameters:
+        - $ref: '#/components/parameters/HourIso'
+        - name: view
+          in: query
+          required: false
+          schema:
+            type: string
+            default: flows
+        - name: fromCell
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provincia
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IntervalMs'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: text/event-stream of mobility flows or province summaries
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  parameters:
+    HourIso:
+      name: hour
+      in: query
+      required: false
+      description: Simulation timestamp (UTC) in range 2013-11-01T00:00:00Z to 2013-11-07T23:59:59Z.
+      schema:
+        type: string
+        format: date-time
+        example: "2013-11-03T10:00:00Z"
+    IntervalMs:
+      name: intervalMs
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1000
+        maximum: 300000
+        default: 5000
+    LimitTraffic:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+    LimitMobility:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Spring pageable sort syntax, e.g. `timestamp,desc`
+
+  schemas:
+    AlertDto:
+      description: Alert generated from congestion events.
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        cellId:
+          type: integer
+        type:
+          type: string
+        severity:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          description: Simulation timestamp string in 2013-11-01..2013-11-07 window.
+          example: "2013-11-03T10:00:00Z"
+      required: [id, cellId, type, severity, message, timestamp]
+
+    GridCellDto:
+      type: object
+      properties:
+        cellId:
+          type: integer
+        bounds:
+          type: string
+        centroidX:
+          type: number
+          format: double
+        centroidY:
+          type: number
+          format: double
+      required: [cellId, bounds, centroidX, centroidY]
+
+    CellDetailsDto:
+      type: object
+      properties:
+        cellId:
+          type: integer
+        countryCode:
+          type: integer
+        smsIn:
+          type: number
+        smsOut:
+          type: number
+        callIn:
+          type: number
+        callOut:
+          type: number
+        internet:
+          type: number
+        totalActivity:
+          type: number
+        bounds:
+          type: string
+        centroidX:
+          type: number
+          format: double
+        centroidY:
+          type: number
+          format: double
+
+    ProvinceDto:
+      description: Province metadata.
+      type: object
+      properties:
+        provincia:
+          type: string
+        population:
+          type: integer
+      required: [provincia, population]
+
+    HourlyTrafficDto:
+      description: Hourly traffic aggregation for one cell.
+      type: object
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        totalSmsin:
+          type: number
+        totalSmsout:
+          type: number
+        totalCallin:
+          type: number
+        totalCallout:
+          type: number
+        totalInternet:
+          type: number
+        totalActivity:
+          type: number
+
+    CongestionCellDto:
+      description: Congestion projection for one cell.
+      type: object
+      properties:
+        cellId:
+          type: integer
+        totalActivity:
+          type: number
+        score:
+          type: number
+          format: double
+        severity:
+          type: string
+
+    HourlySmsDto:
+      description: Hourly SMS aggregation for one cell.
+      type: object
+      properties:
+        cellId:
+          type: integer
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        totalSmsin:
+          type: number
+        totalSmsout:
+          type: number
+        totalActivity:
+          type: number
+
+    HourlyCallDto:
+      description: Hourly call aggregation for one cell.
+      type: object
+      properties:
+        cellId:
+          type: integer
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        callin:
+          type: number
+        callout:
+          type: number
+
+    HourlyInternetDto:
+      description: Hourly internet usage for one cell.
+      type: object
+      properties:
+        cellId:
+          type: integer
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        totalInternet:
+          type: number
+
+    MobilityCellProvinceFlowDto:
+      description: Mobility flow between a cell and province.
+      type: object
+      properties:
+        cellId:
+          type: integer
+        provincia:
+          type: string
+        cellToProvince:
+          type: number
+        provinceToCell:
+          type: number
+        totalFlow:
+          type: number
+
+    MobilityProvinceSummaryDto:
+      description: Aggregated mobility flow summary per province.
+      type: object
+      properties:
+        provincia:
+          type: string
+        totalCellToProvince:
+          type: number
+        totalProvinceToCell:
+          type: number
+        totalFlow:
+          type: number
+
+    NetworkStatsDto:
+      description: Realtime mobility cache summary.
+      type: object
+      properties:
+        totalAlerts:
+          type: integer
+          format: int64
+        totalCells:
+          type: integer
+          format: int64
+        totalTrafficRecords:
+          type: integer
+          format: int64
+        latestTrafficAt:
+          type: string
+          description: Latest simulation timestamp, expected in 2013-11-01..2013-11-07 range.
+          example: "2013-11-03T10:00:00Z"
+      required: [totalAlerts, totalCells, totalTrafficRecords, latestTrafficAt]
+
+    TrafficEvent:
+      description: Raw traffic event published by simulation producer.
+      type: object
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        totalSmsin:
+          type: number
+        totalSmsout:
+          type: number
+        totalCallin:
+          type: number
+        totalCallout:
+          type: number
+        totalInternet:
+          type: number
+        totalActivity:
+          type: number
+
+    SmsEvent:
+      description: Raw SMS event derived from traffic event.
+      type: object
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        totalSmsin:
+          type: number
+        totalSmsout:
+          type: number
+
+    CallEvent:
+      description: Raw call event derived from traffic event.
+      type: object
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        totalCallin:
+          type: number
+        totalCallout:
+          type: number
+
+    InternetEvent:
+      description: Raw internet event derived from traffic event.
+      type: object
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: Simulation hour in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        totalInternet:
+          type: number
+
+    MobilityEvent:
+      description: Raw mobility event from producer stream.
+      type: object
+      properties:
+        datetime:
+          type: string
+          format: date-time
+          description: Simulation timestamp in range 2013-11-01..2013-11-07.
+          example: "2013-11-03T10:00:00Z"
+        cellId:
+          type: integer
+        provincia:
+          type: string
+        cell2province:
+          type: number
+        province2cell:
+          type: number
+
+    Pageable:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        offset:
+          type: integer
+          format: int64
+        paged:
+          type: boolean
+        unpaged:
+          type: boolean
+
+    SortMeta:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
+
+    PageAlertDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertDto'
+        pageable:
+          $ref: '#/components/schemas/Pageable'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          $ref: '#/components/schemas/SortMeta'
+        first:
+          type: boolean
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean
+
+    PageGridCellDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/GridCellDto'
+        pageable:
+          $ref: '#/components/schemas/Pageable'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+        size:
+          type: integer
+        number:
+          type: integer
+        sort:
+          $ref: '#/components/schemas/SortMeta'
+        first:
+          type: boolean
+        numberOfElements:
+          type: integer
+        empty:
+          type: boolean

@@ -34,7 +34,7 @@ public class SmsDtoMapper {
                 event.hour(),
                 smsMapper.safe(event.totalSmsin()),
                 smsMapper.safe(event.totalSmsout()),
-                smsMapper.safe(event.totalSmsout())
+                smsMapper.safe(event.totalSmsin()).add(smsMapper.safe(event.totalSmsout()))
         );
     }
 }

@@ -50,28 +50,4 @@ public class ApiExceptionHandler {
         log.debug("Client disconnected while writing response on {}", request.getRequestURI());
         return ResponseEntity.noContent().build();
     }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleAll(Exception ex, HttpServletRequest request) {
-        if (isBrokenPipe(ex)) {
-            log.debug("Client disconnected while writing response on {}", request.getRequestURI());
-            return ResponseEntity.noContent().build();
-        }
-
-        log.error("Unhandled exception", ex);
-        ApiError error = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
-
-    private boolean isBrokenPipe(Throwable ex) {
-        Throwable current = ex;
-        while (current != null) {
-            String msg = current.getMessage();
-            if (msg != null && msg.toLowerCase().contains("broken pipe")) {
-                return true;
-            }
-            current = current.getCause();
-        }
-        return false;
-    }
 }

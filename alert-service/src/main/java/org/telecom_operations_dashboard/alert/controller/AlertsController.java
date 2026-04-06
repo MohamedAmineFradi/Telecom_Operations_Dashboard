@@ -1,7 +1,5 @@
 package org.telecom_operations_dashboard.alert.controller;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.dto.alert.AlertDto;
 import org.telecom_operations_dashboard.common.util.DateTimeParser;
@@ -57,17 +55,5 @@ public class AlertsController {
     public ResponseEntity<Void> resolveAlert(@PathVariable("id") Long id) {
         alertService.resolveAlert(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/congestion")
-    public ResponseEntity<List<AlertDto>> generateCongestionAlerts(
-            @RequestParam("hour") @NotBlank String hourIso,
-            @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit,
-            @RequestParam(name = "warn", defaultValue = "70") double warn,
-            @RequestParam(name = "crit", defaultValue = "90") double crit
-    ) {
-        OffsetDateTime hour = DateTimeParser.parse(hourIso, "hour");
-        log.info("Generate congestion alerts at {} (limit={}, warn={}, crit={})", hourIso, limit, warn, crit);
-        return ResponseEntity.ok(alertService.generateCongestionAlerts(hour, limit, warn, crit));
     }
 }

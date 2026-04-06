@@ -5,9 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 import org.springframework.kafka.annotation.EnableKafka;
+// import org.springframework.kafka.annotation.EnableKafkaStreams;
 
 @SpringBootApplication
 @EnableKafka
+// @EnableKafkaStreams
 @EnableDiscoveryClient
 @org.springframework.context.annotation.Import(org.telecom_operations_dashboard.common.config.CorsConfig.class)
 public class SmsServiceApplication {
