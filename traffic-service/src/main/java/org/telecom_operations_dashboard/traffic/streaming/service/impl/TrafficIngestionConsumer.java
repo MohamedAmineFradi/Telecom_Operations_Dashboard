@@ -1,15 +1,12 @@
 package org.telecom_operations_dashboard.traffic.streaming.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 
-@Component
+@Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.service", havingValue = "traffic")
-@ConditionalOnProperty(prefix = "app.streaming", name = "enabled", havingValue = "true")
 public class TrafficIngestionConsumer {
 
     private final TrafficRawSseBroadcaster trafficRawSseBroadcaster;

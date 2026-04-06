@@ -30,8 +30,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.service", havingValue = "traffic")
-@ConditionalOnProperty(prefix = "app.streaming", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.streaming.enabled", havingValue = "true")
 public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryService {
 
     private static final Logger log = LoggerFactory.getLogger(TrafficRealtimeQueryServiceImpl.class);

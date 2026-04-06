@@ -7,6 +7,7 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +18,11 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Configuration
-@ConditionalOnProperty(name = "app.service", havingValue = "traffic")
-@ConditionalOnProperty(prefix = "app.streaming", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.streaming.enabled", havingValue = "true")
 public class TrafficStreamsTopologyConfig {
+
+    @Autowired
+    private TrafficCongestionProperties congestionProperties;
 
     @Bean
     public KStream<String, TrafficEvent> trafficHourlyCellAggregationTopology(
@@ -43,13 +46,46 @@ public class TrafficStreamsTopologyConfig {
                         TrafficEvent::new,
                         (aggKey, incoming, aggregate) -> accumulate(incoming, aggregate),
                     Materialized.<String, TrafficEvent, KeyValueStore<org.apache.kafka.common.utils.Bytes, byte[]>>as(
-                                        TrafficStreamsStoreNames.TRAFFIC_HOURLY_CELL_STORE
-                                )
-                                .withKeySerde(Serdes.String())
-                                .withValueSerde(trafficEventSerde)
-                );
+                                         TrafficStreamsStoreNames.TRAFFIC_HOURLY_CELL_STORE
+                                 )
+                                 .withKeySerde(Serdes.String())
+                                 .withValueSerde(trafficEventSerde)
+                )
+                .toStream()
+                .mapValues(this::toCongestionEvent)
+                .filter((key, event) -> !"LOW".equals(event.getSeverity()))
+                .to(TrafficStreamsStoreNames.CONGESTION_TOPIC,
+                        org.apache.kafka.streams.kstream.Produced.with(Serdes.String(), CongestionEventSerde.create()));
 
         return source;
+    }
+
+    private org.telecom_operations_dashboard.common.dto.event.CongestionEvent toCongestionEvent(TrafficEvent event) {
+        BigDecimal total = safe(event.getTotalActivity());
+        String severity;
+        double score;
+
+        BigDecimal lowMax = congestionProperties.normalizedLowMax();
+        BigDecimal mediumMax = congestionProperties.normalizedMediumMax();
+
+        if (total.compareTo(lowMax) <= 0) {
+            severity = "LOW";
+            score = 33.0;
+        } else if (total.compareTo(mediumMax) <= 0) {
+            severity = "MEDIUM";
+            score = 66.0;
+        } else {
+            severity = "HIGH";
+            score = 100.0;
+        }
+
+        return new org.telecom_operations_dashboard.common.dto.event.CongestionEvent(
+                event.getCellId(),
+                event.getHour(),
+                total,
+                score,
+                severity
+        );
     }
 
     private TrafficEvent normalizeEvent(TrafficEvent event) {

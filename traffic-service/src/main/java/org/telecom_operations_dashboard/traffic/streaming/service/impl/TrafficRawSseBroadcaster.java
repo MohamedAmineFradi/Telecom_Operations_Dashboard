@@ -10,10 +10,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@Slf4j
 @Component
 public class TrafficRawSseBroadcaster {
-
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TrafficRawSseBroadcaster.class);
     private final List<SseEmitter> rawEmitters = new CopyOnWriteArrayList<>();
 
     public SseEmitter registerRawStream() {
