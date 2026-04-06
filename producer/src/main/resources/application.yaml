@@ -4,7 +4,7 @@ spring:
   jmx:
     enabled: false
   main:
-    lazy-initialization: true
+    lazy-initialization: false
 
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/milan_telecom}
@@ -36,27 +36,29 @@ spring:
         buffer.memory: 33554432
         batch.size: 32768
         linger.ms: 10
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        
+app:
+  simulation:
+    start: ${APP_SIMULATION_START:2013-11-01T00:00:00Z}
+    end: ${APP_SIMULATION_END:2013-11-07T23:59:59Z}
+    step: ${APP_SIMULATION_STEP:PT1H}
+    batch-size: ${APP_SIMULATION_BATCH_SIZE:100}
 
 producer:
   poll:
-    interval-ms: 5000
+    interval-ms: ${PRODUCER_POLL_INTERVAL_MS:600000}
     initial-delay-ms: ${PRODUCER_POLL_INITIAL_DELAY_MS:5000}
     mobility-initial-delay-ms: ${PRODUCER_MOBILITY_POLL_INITIAL_DELAY_MS:5000}
-  replay:
-    start: ${PRODUCER_REPLAY_START:2013-11-01T00:00:00Z}
-    end: ${PRODUCER_REPLAY_END:2013-11-07T23:59:59Z}
-    step: ${PRODUCER_REPLAY_STEP:PT1H}
-    batch-size: ${PRODUCER_REPLAY_BATCH_SIZE:100}
   kafka-health:
     enabled: ${PRODUCER_KAFKA_HEALTH_ENABLED:false}
 
 server:
-  tomcat:
-    threads:
-      max: 4
-      min-spare: 1
-    max-connections: 32
-    accept-count: 8
+  port: 8108
 
 management:
   endpoints:
@@ -80,7 +82,9 @@ management:
 logging:
   level:
     org.example.producer: INFO
-    org.hibernate.SQL: WARN
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
 
 eureka:
   client:
