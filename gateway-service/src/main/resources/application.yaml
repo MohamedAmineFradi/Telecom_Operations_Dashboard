@@ -28,6 +28,8 @@ spring:
                 - "X-Custom-Header"
               allowCredentials: true        
               maxAge: 3600
+      loadbalancer:
+        configurations: health-check
       routes:
         - id: traffic-service
           uri: lb://TRAFFIC-SERVICE

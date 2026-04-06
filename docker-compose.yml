@@ -6,8 +6,6 @@ services:
     container_name: telecom-traffic-service
     networks:
       - kafka-net
-    ports:
-      - "8103:8103"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -45,8 +43,6 @@ services:
     container_name: telecom-sms-service
     networks:
       - kafka-net
-    ports:
-      - "8105:8105"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -72,8 +68,6 @@ services:
     container_name: telecom-call-service
     networks:
       - kafka-net
-    ports:
-      - "8106:8106"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -99,8 +93,6 @@ services:
     container_name: telecom-internet-service
     networks:
       - kafka-net
-    ports:
-      - "8107:8107"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -126,8 +118,6 @@ services:
     container_name: telecom-alert-service
     networks:
       - kafka-net
-    ports:
-      - "8101:8101"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -162,8 +152,6 @@ services:
     container_name: telecom-cell-service
     networks:
       - kafka-net
-    ports:
-      - "8102:8102"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       SPRING_DATASOURCE_USERNAME: postgres
@@ -192,8 +180,6 @@ services:
     container_name: telecom-mobility-service
     networks:
       - kafka-net
-    ports:
-      - "8104:8104"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
@@ -229,8 +215,6 @@ services:
     container_name: telecom-producer
     networks:
       - kafka-net
-    ports:
-      - "8108:8108"
     environment:
       DB_URL: jdbc:postgresql://milan_etl_postgres:5432/milan_telecom
       DB_USER: postgres
