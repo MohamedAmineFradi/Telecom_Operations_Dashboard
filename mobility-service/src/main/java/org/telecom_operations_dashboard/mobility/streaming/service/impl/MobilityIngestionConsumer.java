@@ -9,8 +9,7 @@ import org.telecom_operations_dashboard.mobility.streaming.service.MobilityRealt
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.service", havingValue = "mobility")
-@ConditionalOnProperty(prefix = "app.streaming", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.streaming.enabled", havingValue = "true")
 public class MobilityIngestionConsumer {
 
     private final MobilityRealtimeQueryService mobilityRealtimeQueryService;

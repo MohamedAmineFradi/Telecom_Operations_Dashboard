@@ -27,8 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.service", havingValue = "mobility")
-@ConditionalOnProperty(prefix = "app.streaming", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.streaming.enabled", havingValue = "true")
 public class MobilityRealtimeQueryServiceImpl implements MobilityRealtimeQueryService {
 
     private static final Logger log = LoggerFactory.getLogger(MobilityRealtimeQueryServiceImpl.class);

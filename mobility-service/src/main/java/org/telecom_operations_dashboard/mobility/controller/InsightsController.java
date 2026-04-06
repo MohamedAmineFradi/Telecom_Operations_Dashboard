@@ -1,9 +1,9 @@
 package org.telecom_operations_dashboard.mobility.controller;
 
-import jakarta.annotation.PreDestroy;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
+import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.common.util.DateTimeParser;
 import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.telecom_operations_dashboard.mobility.dto.insight.NetworkStatsDto;
@@ -11,57 +11,38 @@ import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityCellProvin
 import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityProvinceSummaryDto;
 import org.telecom_operations_dashboard.mobility.streaming.service.impl.MobilityRawSseBroadcaster;
 import org.telecom_operations_dashboard.mobility.streaming.service.MobilityRealtimeQueryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/mobility")
 @RequiredArgsConstructor
+@Validated
 @ConditionalOnProperty(name = "app.service", havingValue = "mobility")
-public class InsightsController {
-
-    private static final Logger log = LoggerFactory.getLogger(InsightsController.class);
+public class InsightsController extends AbstractSseController {
 
     private final MobilityRealtimeQueryService mobilityRealtimeQueryService;
     private final MobilityRawSseBroadcaster mobilityRawSseBroadcaster;
-    private final ScheduledExecutorService sseScheduler = Executors.newScheduledThreadPool(4, r -> {
-        Thread t = new Thread(r, "SSE-Mobility-Shared-" + System.nanoTime());
-        t.setDaemon(false);
-        return t;
-    });
 
-    @PreDestroy
-    void shutdownSseScheduler() {
-        sseScheduler.shutdownNow();
-    }
-
-    @GetMapping(path = "/mobility/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(path = "/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamRawMobility() {
         return mobilityRawSseBroadcaster.registerRawStream();
     }
 
     // Cell-scoped flows
-    @GetMapping("/mobility/cell-flows")
+    @GetMapping({"/mobility/cell-flows", "/cell-flows"})
     public ResponseEntity<List<MobilityCellProvinceFlowDto>> getCellFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "fromCell", required = false) Integer fromCellId,
@@ -72,7 +53,7 @@ public class InsightsController {
     }
 
     // Province-scoped flows
-    @GetMapping("/mobility/province-flows")
+      @GetMapping("/province-flows")
     public ResponseEntity<List<MobilityCellProvinceFlowDto>> getProvinceFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "from", required = false) String fromProvince,
@@ -82,7 +63,7 @@ public class InsightsController {
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeFlowsAtHour(hour, null, fromProvince, limit));
     }
 
-    @GetMapping("/mobility/province-summary")
+      @GetMapping("/province-summary")
     public ResponseEntity<List<MobilityProvinceSummaryDto>> getProvinceSummaries(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "provincia", required = false) String provincia,
@@ -168,77 +149,22 @@ public class InsightsController {
         return DateTimeParser.parse(hourIso, "hour");
     }
 
-
-        private SseEmitter createMobilitySseEmitter(
+    private SseEmitter createMobilitySseEmitter(
             long intervalMs,
             String eventName,
             Supplier<List<?>> dataSupplier,
             String endpoint
     ) {
-        log.info("Mobility SSE stream opened endpoint={} event={} intervalMs={}", endpoint, eventName, intervalMs);
-
-        long sseTimeoutMs = Math.max(intervalMs * 3, 15 * 1000L); // At least 3 intervals or 15s
-        SseEmitter emitter = new SseEmitter(sseTimeoutMs);
-        AtomicBoolean closed = new AtomicBoolean(false);
-        AtomicReference<ScheduledFuture<?>> taskRef = new AtomicReference<>();
-
-        Runnable shutdown = () -> {
-            if (closed.compareAndSet(false, true)) {
-                ScheduledFuture<?> task = taskRef.get();
-                if (task != null) {
-                    task.cancel(true);
-                }
-                log.info("Mobility SSE stream closed endpoint={} (timeout={}ms)", endpoint, sseTimeoutMs);
-            }
-        };
-
-        emitter.onCompletion(shutdown);
-        emitter.onTimeout(() -> {
-            log.warn("SSE timeout for {} after {}ms", endpoint, sseTimeoutMs);
-            shutdown.run();
-            try {
-                emitter.complete();
-            } catch (Exception ex) {
-                log.debug("Error completing emitter on timeout", ex);
-            }
-        });
-        emitter.onError(error -> {
-            log.debug("SSE error for {}: {}", endpoint, error.getMessage());
-            shutdown.run();
-        });
-
-        ScheduledFuture<?> task = sseScheduler.scheduleAtFixedRate(() -> {
-            if (closed.get()) {
-                return;
-            }
-
-            try {
-                List<?> payload = dataSupplier.get();
-                if (!payload.isEmpty()) {
-                    emitter.send(SseEmitter.event()
-                            .name(eventName)
-                            .data(payload)
-                            .id(String.valueOf(System.currentTimeMillis())));
-                    log.debug("Sent {} mobility updates to {}", payload.size(), endpoint);
-                }
-            } catch (IOException e) {
-                log.debug("SSE client disconnected from {} (IOException)", endpoint);
-                shutdown.run();
-            } catch (IllegalStateException e) {
-                log.debug("Emitter closed for {}", endpoint);
-                shutdown.run();
-            } catch (Exception e) {
-                log.error("Failed to emit mobility update for {}", endpoint, e);
-                try {
-                    shutdown.run();
-                    emitter.completeWithError(e);
-                } catch (Exception ex) {
-                    log.debug("Error during error completion", ex);
-                }
-            }
-        }, 0, intervalMs, TimeUnit.MILLISECONDS);
-        taskRef.set(task);
-
-        return emitter;
+        long safeInterval = Math.max(intervalMs, 1000);
+        long sseTimeoutMs = Math.max(safeInterval * 3, 15_000L);
+        
+        return createScheduledEmitter(
+                safeInterval,
+                sseTimeoutMs,
+                eventName,
+                endpoint,
+                dataSupplier::get,
+                true
+        );
     }
 }
