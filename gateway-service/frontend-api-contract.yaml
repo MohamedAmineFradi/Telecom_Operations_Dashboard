@@ -51,7 +51,7 @@ paths:
   /api/traffic/heatmap/stream:
     get:
       tags: [traffic]
-      summary: Traffic heatmap SSE stream for hour
+      summary: Traffic heatmap SSE stream for hour (polled)
       parameters:
         - $ref: '#/components/parameters/HourIso'
         - $ref: '#/components/parameters/IntervalMs'
@@ -64,10 +64,22 @@ paths:
               schema:
                 type: string
 
+  /api/traffic/heatmap/realtime/stream:
+    get:
+      tags: [traffic]
+      summary: Real-time traffic heatmap SSE stream (push)
+      responses:
+        "200":
+          description: text/event-stream of HourlyTrafficDto (single object per event)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
   /api/traffic/congestion/stream:
     get:
       tags: [traffic]
-      summary: Congestion SSE stream for hour
+      summary: Congestion SSE stream for hour (polled)
       parameters:
         - $ref: '#/components/parameters/HourIso'
         - $ref: '#/components/parameters/IntervalMs'
@@ -79,6 +91,108 @@ paths:
             text/event-stream:
               schema:
                 type: string
+
+  /api/traffic/congestion/realtime/stream:
+    get:
+      tags: [traffic]
+      summary: Real-time congestion SSE stream (push)
+      responses:
+        "200":
+          description: text/event-stream of CongestionCellDto (single object per event)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/traffic/heatmap/range:
+    get:
+      tags: [traffic]
+      summary: Get heatmap for a time range
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: List of HourlyTrafficDto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HourlyTrafficDto'
+
+  /api/traffic/heatmap/history:
+    get:
+      tags: [traffic]
+      summary: Get recent heatmap history
+      parameters:
+        - $ref: '#/components/parameters/DurationHours'
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: List of HourlyTrafficDto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HourlyTrafficDto'
+
+  /api/traffic/congestion/range:
+    get:
+      tags: [traffic]
+      summary: Get congestion for a time range
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: List of CongestionCellDto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CongestionCellDto'
+
+  /api/traffic/congestion/history:
+    get:
+      tags: [traffic]
+      summary: Get recent congestion history
+      parameters:
+        - $ref: '#/components/parameters/DurationHours'
+        - $ref: '#/components/parameters/LimitTraffic'
+      responses:
+        "200":
+          description: List of CongestionCellDto
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CongestionCellDto'
 
   /api/sms/raw/stream:
     get:
@@ -687,6 +801,15 @@ components:
         type: integer
         minimum: 1
         default: 100
+    DurationHours:
+      name: durationHours
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 168
+        default: 6
     Page:
       name: page
       in: query
