@@ -37,25 +37,30 @@ public class TrafficStreamsTopologyConfig {
                 Consumed.with(Serdes.String(), trafficEventSerde)
         );
 
-        source
+        KStream<String, TrafficEvent> processedSource = source
                 .filter((key, event) -> event != null && event.getHour() != null && event.getCellId() != null)
-                .mapValues(this::normalizeEvent)
+                .mapValues(this::normalizeEvent);
+
+        // Real-time alerting (immediate per-event check)
+        processedSource
+                .mapValues(this::toCongestionEvent)
+                .filter((key, event) -> !"LOW".equals(event.getSeverity()))
+                .to(TrafficStreamsStoreNames.CONGESTION_TOPIC,
+                        org.apache.kafka.streams.kstream.Produced.with(Serdes.String(), CongestionEventSerde.create()));
+
+        // Hourly aggregation (for persistence and stateful heatmap queries)
+        processedSource
                 .selectKey((key, event) -> compositeKey(event.getHour(), event.getCellId()))
                 .groupByKey(Grouped.with(Serdes.String(), trafficEventSerde))
                 .aggregate(
                         TrafficEvent::new,
                         (aggKey, incoming, aggregate) -> accumulate(incoming, aggregate),
-                    Materialized.<String, TrafficEvent, KeyValueStore<org.apache.kafka.common.utils.Bytes, byte[]>>as(
-                                         TrafficStreamsStoreNames.TRAFFIC_HOURLY_CELL_STORE
-                                 )
-                                 .withKeySerde(Serdes.String())
-                                 .withValueSerde(trafficEventSerde)
-                )
-                .toStream()
-                .mapValues(this::toCongestionEvent)
-                .filter((key, event) -> !"LOW".equals(event.getSeverity()))
-                .to(TrafficStreamsStoreNames.CONGESTION_TOPIC,
-                        org.apache.kafka.streams.kstream.Produced.with(Serdes.String(), CongestionEventSerde.create()));
+                        Materialized.<String, TrafficEvent, KeyValueStore<org.apache.kafka.common.utils.Bytes, byte[]>>as(
+                                TrafficStreamsStoreNames.TRAFFIC_HOURLY_CELL_STORE
+                        )
+                        .withKeySerde(Serdes.String())
+                        .withValueSerde(trafficEventSerde)
+                );
 
         return source;
     }

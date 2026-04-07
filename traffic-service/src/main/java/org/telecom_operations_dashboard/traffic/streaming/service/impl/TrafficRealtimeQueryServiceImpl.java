@@ -46,6 +46,14 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
         if (resolvedHour == null) {
             return List.of();
         }
+        return getHeatmapInRange(resolvedHour, resolvedHour, limit);
+    }
+
+    @Override
+    public List<HourlyTrafficDto> getHeatmapInRange(OffsetDateTime start, OffsetDateTime end, Integer limit) {
+        if (start == null || end == null) {
+            return List.of();
+        }
 
         int safeLimit = NormalizationUtils.normalizeLimitClamped(limit, 100, MAX_LIMIT);
         Optional<ReadOnlyKeyValueStore<String, TrafficEvent>> storeOpt = getStore();
@@ -53,13 +61,14 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
             return List.of();
         }
 
+        String startPrefix = NormalizationUtils.truncateToHour(start).toString() + "|";
+        String endPrefix = NormalizationUtils.truncateToHour(end).toString() + "|\uffff";
+
         List<HourlyTrafficDto> rows = new ArrayList<>();
-        try (KeyValueIterator<String, TrafficEvent> all = storeOpt.get().all()) {
-            while (all.hasNext()) {
-                TrafficEvent event = all.next().value;
-                if (event == null || event.getHour() == null || !resolvedHour.equals(event.getHour())) {
-                    continue;
-                }
+        try (KeyValueIterator<String, TrafficEvent> it = storeOpt.get().range(startPrefix, endPrefix)) {
+            while (it.hasNext()) {
+                TrafficEvent event = it.next().value;
+                if (event == null) continue;
 
                 HourlyTrafficDto dto = trafficDtoMapper.toHourlyTrafficDto(event);
                 if (dto != null) {
@@ -69,9 +78,10 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
         }
 
         rows.sort(Comparator.comparing(
-            (HourlyTrafficDto row) -> safe(row.getTotalActivity()),
-            BigDecimal::compareTo
+                (HourlyTrafficDto row) -> row.getTotalActivity() == null ? BigDecimal.ZERO : row.getTotalActivity(),
+                BigDecimal::compareTo
         ).reversed());
+
         if (rows.size() <= safeLimit) {
             return rows;
         }
@@ -80,32 +90,27 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
 
     @Override
     public List<CongestionCellDto> getCongestionAtHour(OffsetDateTime hour, Integer limit) {
-        List<HourlyTrafficDto> heatmap = getHeatmapAtHour(hour, limit);
+        OffsetDateTime resolvedHour = resolveHourOrLatest(hour);
+        if (resolvedHour == null) {
+            return List.of();
+        }
+        return getCongestionInRange(resolvedHour, resolvedHour, limit);
+    }
+
+    @Override
+    public List<CongestionCellDto> getCongestionInRange(OffsetDateTime start, OffsetDateTime end, Integer limit) {
+        List<HourlyTrafficDto> heatmap = getHeatmapInRange(start, end, limit);
         if (heatmap.isEmpty()) {
             return List.of();
         }
 
-        BigDecimal lowMax = congestionProperties.normalizedLowMax();
-        BigDecimal mediumMax = congestionProperties.normalizedMediumMax();
-
         return heatmap.stream()
                 .map(row -> {
-                    BigDecimal total = safe(row.getTotalActivity());
-                    String severity;
-                    double score;
-
-                    if (total.compareTo(lowMax) <= 0) {
-                        severity = "LOW";
-                        score = 33.0;
-                    } else if (total.compareTo(mediumMax) <= 0) {
-                        severity = "MEDIUM";
-                        score = 66.0;
-                    } else {
-                        severity = "HIGH";
-                        score = 100.0;
-                    }
-
-                    return new CongestionCellDto(row.getCellId(), total, score, severity);
+                    // Use mapper for consistency
+                    TrafficEvent event = new TrafficEvent();
+                    event.setCellId(row.getCellId());
+                    event.setTotalActivity(row.getTotalActivity());
+                    return trafficDtoMapper.toCongestionCellDto(event, congestionProperties);
                 })
                 .toList();
     }
@@ -155,8 +160,5 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
         }
     }
 
-    private BigDecimal safe(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
-    }
 
 }

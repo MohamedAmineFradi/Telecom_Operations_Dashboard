@@ -12,42 +12,66 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 public class TrafficRawSseBroadcaster {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TrafficRawSseBroadcaster.class);
     private final List<SseEmitter> rawEmitters = new CopyOnWriteArrayList<>();
+    private final List<SseEmitter> heatmapEmitters = new CopyOnWriteArrayList<>();
+    private final List<SseEmitter> congestionEmitters = new CopyOnWriteArrayList<>();
 
     public SseEmitter registerRawStream() {
-        SseEmitter emitter = new SseEmitter(0L);
-        rawEmitters.add(emitter);
+        return registerStream(rawEmitters, "traffic-raw-connected");
+    }
 
-        Runnable cleanup = () -> rawEmitters.remove(emitter);
+    public SseEmitter registerHeatmapStream() {
+        return registerStream(heatmapEmitters, "traffic-heatmap-connected");
+    }
+
+    public SseEmitter registerCongestionStream() {
+        return registerStream(congestionEmitters, "traffic-congestion-connected");
+    }
+
+    private SseEmitter registerStream(List<SseEmitter> emitters, String connectionEventName) {
+        SseEmitter emitter = new SseEmitter(0L);
+        emitters.add(emitter);
+
+        Runnable cleanup = () -> emitters.remove(emitter);
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
         emitter.onError(e -> cleanup.run());
 
         try {
             emitter.send(SseEmitter.event()
-                    .name("traffic-raw-connected")
+                    .name(connectionEventName)
                     .data("connected", MediaType.TEXT_PLAIN));
         } catch (IOException | IllegalStateException ex) {
             cleanup.run();
         }
 
-        log.info("New raw Traffic SSE client connected.");
         return emitter;
     }
 
     public void broadcastRawEvent(TrafficEvent event) {
-        if (event == null) {
+        broadcast(rawEmitters, "traffic-raw", event);
+    }
+
+    public void broadcastHeatmapUpdate(org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto dto) {
+        broadcast(heatmapEmitters, "traffic-heatmap-update", dto);
+    }
+
+    public void broadcastCongestionUpdate(org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto dto) {
+        broadcast(congestionEmitters, "traffic-congestion-update", dto);
+    }
+
+    private void broadcast(List<SseEmitter> emitters, String eventName, Object data) {
+        if (data == null) {
             return;
         }
 
-        for (SseEmitter emitter : rawEmitters) {
+        for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("traffic-raw")
-                        .data(event, MediaType.APPLICATION_JSON));
+                        .name(eventName)
+                        .data(data, MediaType.APPLICATION_JSON));
             } catch (IOException | IllegalStateException ex) {
-                rawEmitters.remove(emitter);
+                emitters.remove(emitter);
             }
         }
     }
