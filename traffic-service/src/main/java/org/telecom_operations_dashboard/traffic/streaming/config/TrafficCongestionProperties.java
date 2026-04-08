@@ -13,8 +13,8 @@ import java.math.BigDecimal;
 @ConfigurationProperties(prefix = "app.traffic.congestion")
 public class TrafficCongestionProperties {
 
-    private BigDecimal lowMax = new BigDecimal("500");
-    private BigDecimal mediumMax = new BigDecimal("2000");
+    private BigDecimal lowMax = new BigDecimal("3000");
+    private BigDecimal mediumMax = new BigDecimal("5000");
 
     public BigDecimal normalizedLowMax() {
         return lowMax == null ? BigDecimal.ZERO : lowMax.max(BigDecimal.ZERO);

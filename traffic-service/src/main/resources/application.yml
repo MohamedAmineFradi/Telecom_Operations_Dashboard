@@ -7,8 +7,8 @@ app:
   service: traffic
   traffic:
     congestion:
-      low-max: ${APP_TRAFFIC_CONGESTION_LOW_MAX:5000}
-      medium-max: ${APP_TRAFFIC_CONGESTION_MEDIUM_MAX:10000}
+      low-max: ${APP_TRAFFIC_CONGESTION_LOW_MAX:3000}
+      medium-max: ${APP_TRAFFIC_CONGESTION_MEDIUM_MAX:5000}
 
 kafka:
   topics:
