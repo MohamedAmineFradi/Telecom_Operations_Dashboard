@@ -23,6 +23,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendHighCongestionAlert(String cellId, String severity, String message) {
         try {
             SimpleMailMessage mailMessage = new SimpleMailMessage();
+            mailMessage.setFrom("Dashboard Alert Service <alert-service@telecom.com>");
             mailMessage.setTo(operatorEmail);
             mailMessage.setSubject("CRITICAL: High Congestion Alert - Cell " + cellId);
             mailMessage.setText(String.format(
