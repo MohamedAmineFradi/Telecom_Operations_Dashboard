@@ -114,6 +114,7 @@ BUSINESS_CHECKS=(
   "mobility-service-province-flows|http://localhost:8104/api/mobility/province-flows?limit=10|json-2xx"
   "mobility-service-province-summary|http://localhost:8104/api/mobility/province-summary?limit=10|json-2xx"
   "mobility-service|http://localhost:8104/api/mobility/stats|json-2xx"
+  "producer-simulation-clock|http://localhost:8108/api/simulation-clock/stream|sse-200"
   "gateway-service|http://localhost:8090/api/cells/page?page=0&size=1|json-2xx"
 )
 
@@ -143,6 +144,7 @@ GATEWAY_BUSINESS_CHECKS=(
   "gateway-mobility-stream-alias-province|http://localhost:8090/api/mobility/mobility/province-flows/stream?intervalMs=1000|sse-200"
   "gateway-mobility-stream-alias-summary|http://localhost:8090/api/mobility/mobility/province-summary/stream?intervalMs=1000|sse-200"
   "gateway-mobility|http://localhost:8090/api/mobility/stats|json-2xx"
+  "gateway-simulation-clock|http://localhost:8090/api/simulation-clock/stream|sse-200"
 )
 
 start_services() {

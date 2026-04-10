@@ -63,6 +63,10 @@ spring:
           uri: lb://MOBILITY-SERVICE
           predicates:
               - Path=/api/mobility/**
+        - id: producer-service
+          uri: lb://PRODUCER
+          predicates:
+            - Path=/api/simulation-clock/**
 
 eureka:
   client:

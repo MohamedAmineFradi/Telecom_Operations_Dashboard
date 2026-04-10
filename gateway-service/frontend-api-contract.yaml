@@ -20,8 +20,21 @@ tags:
   - name: cells
   - name: provinces
   - name: mobility
+  - name: simulation-clock
 
 paths:
+  /api/simulation-clock/stream:
+    get:
+      tags: [simulation-clock]
+      summary: Simulation master clock SSE stream
+      responses:
+        "200":
+          description: text/event-stream of SimulationTickEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
   /api/traffic/raw/stream:
     get:
       tags: [traffic]
