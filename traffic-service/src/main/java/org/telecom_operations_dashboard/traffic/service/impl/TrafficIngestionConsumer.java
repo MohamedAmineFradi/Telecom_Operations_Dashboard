@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.traffic.streaming.service.impl;
+package org.telecom_operations_dashboard.traffic.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -7,7 +7,7 @@ import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto;
 import org.telecom_operations_dashboard.traffic.mapper.TrafficDtoMapper;
-import org.telecom_operations_dashboard.traffic.streaming.config.TrafficCongestionProperties;
+import org.telecom_operations_dashboard.traffic.config.TrafficCongestionProperties;
 
 @Service
 @RequiredArgsConstructor

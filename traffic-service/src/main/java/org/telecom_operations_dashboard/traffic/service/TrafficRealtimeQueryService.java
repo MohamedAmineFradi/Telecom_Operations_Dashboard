@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.traffic.streaming.service;
+package org.telecom_operations_dashboard.traffic.service;
 
 import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto;

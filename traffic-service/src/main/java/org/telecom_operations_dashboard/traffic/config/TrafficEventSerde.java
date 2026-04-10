@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.traffic.streaming.config;
+package org.telecom_operations_dashboard.traffic.config;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;

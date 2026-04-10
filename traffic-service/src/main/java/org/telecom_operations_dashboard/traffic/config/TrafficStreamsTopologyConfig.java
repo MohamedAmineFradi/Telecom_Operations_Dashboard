@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.traffic.streaming.config;
+package org.telecom_operations_dashboard.traffic.config;
 
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -66,7 +66,7 @@ public class TrafficStreamsTopologyConfig {
     }
 
     private org.telecom_operations_dashboard.common.dto.event.CongestionEvent toCongestionEvent(TrafficEvent event) {
-        BigDecimal total = safe(event.getTotalActivity());
+        BigDecimal total = NormalizationUtils.safe(event.getTotalActivity());
         String severity;
         double score;
 
@@ -97,19 +97,15 @@ public class TrafficStreamsTopologyConfig {
         TrafficEvent normalized = new TrafficEvent();
         normalized.setHour(NormalizationUtils.truncateToHour(event.getHour()));
         normalized.setCellId(event.getCellId());
-        normalized.setTotalActivity(safe(event.getTotalActivity()));
+        normalized.setTotalActivity(NormalizationUtils.safe(event.getTotalActivity()));
         return normalized;
     }
 
     private TrafficEvent accumulate(TrafficEvent incoming, TrafficEvent aggregate) {
         aggregate.setHour(incoming.getHour());
         aggregate.setCellId(incoming.getCellId());
-        aggregate.setTotalActivity(safe(aggregate.getTotalActivity()).add(safe(incoming.getTotalActivity())));
+        aggregate.setTotalActivity(NormalizationUtils.safe(aggregate.getTotalActivity()).add(NormalizationUtils.safe(incoming.getTotalActivity())));
         return aggregate;
-    }
-
-    private BigDecimal safe(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
     }
 
     private String compositeKey(OffsetDateTime hour, Integer cellId) {

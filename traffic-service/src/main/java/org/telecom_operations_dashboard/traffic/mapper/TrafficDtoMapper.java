@@ -3,7 +3,8 @@ package org.telecom_operations_dashboard.traffic.mapper;
 import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto;
 import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
-import org.telecom_operations_dashboard.traffic.streaming.config.TrafficCongestionProperties;
+import org.telecom_operations_dashboard.common.util.NormalizationUtils;
+import org.telecom_operations_dashboard.traffic.config.TrafficCongestionProperties;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -19,7 +20,7 @@ public class TrafficDtoMapper {
     public CongestionCellDto toCongestionCellDto(TrafficEvent event, TrafficCongestionProperties properties) {
         if (event == null) return null;
         
-        BigDecimal total = event.getTotalActivity() == null ? BigDecimal.ZERO : event.getTotalActivity();
+        BigDecimal total = NormalizationUtils.safe(event.getTotalActivity());
         BigDecimal lowMax = properties.normalizedLowMax();
         BigDecimal mediumMax = properties.normalizedMediumMax();
 

@@ -3,17 +3,20 @@ package org.telecom_operations_dashboard.traffic.controller;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto;
-import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.common.util.DateTimeParser;
-import org.telecom_operations_dashboard.traffic.streaming.service.TrafficRealtimeQueryService;
-import org.telecom_operations_dashboard.traffic.streaming.service.impl.TrafficRawSseBroadcaster;
-import org.springframework.http.MediaType;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.bind.annotation.*;
+import org.telecom_operations_dashboard.traffic.service.TrafficRealtimeQueryService;
+import org.telecom_operations_dashboard.traffic.service.impl.TrafficRawSseBroadcaster;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -135,10 +138,7 @@ public class TrafficController extends AbstractSseController {
     }
 
     private OffsetDateTime resolveHour(String hourIso) {
-        if (hourIso == null || hourIso.isBlank()) {
-            return resolveLatestHour();
-        }
-        return DateTimeParser.parse(hourIso, "hour");
+        return DateTimeParser.parseIfPresent(hourIso, "hour").orElseGet(this::resolveLatestHour);
     }
 
     private OffsetDateTime resolveLatestHour() {

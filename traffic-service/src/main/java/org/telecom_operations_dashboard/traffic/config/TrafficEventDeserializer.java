@@ -1,13 +1,12 @@
-package org.telecom_operations_dashboard.traffic.streaming.config;
+package org.telecom_operations_dashboard.traffic.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
+import org.telecom_operations_dashboard.common.util.JsonMapperFactory;
 
 public class TrafficEventDeserializer implements Deserializer<TrafficEvent> {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER = JsonMapperFactory.createJavaTimeObjectMapper();
 
     @Override
     public TrafficEvent deserialize(String topic, byte[] data) {

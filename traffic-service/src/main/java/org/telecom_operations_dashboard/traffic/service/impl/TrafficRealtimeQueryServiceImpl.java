@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.traffic.streaming.service.impl;
+package org.telecom_operations_dashboard.traffic.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.streams.KafkaStreams;
@@ -17,9 +17,9 @@ import org.telecom_operations_dashboard.common.dto.traffic.CongestionCellDto;
 import org.telecom_operations_dashboard.common.dto.traffic.HourlyTrafficDto;
 import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.telecom_operations_dashboard.traffic.mapper.TrafficDtoMapper;
-import org.telecom_operations_dashboard.traffic.streaming.config.TrafficCongestionProperties;
-import org.telecom_operations_dashboard.traffic.streaming.config.TrafficStreamsStoreNames;
-import org.telecom_operations_dashboard.traffic.streaming.service.TrafficRealtimeQueryService;
+import org.telecom_operations_dashboard.traffic.config.TrafficCongestionProperties;
+import org.telecom_operations_dashboard.traffic.config.TrafficStreamsStoreNames;
+import org.telecom_operations_dashboard.traffic.service.TrafficRealtimeQueryService;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
