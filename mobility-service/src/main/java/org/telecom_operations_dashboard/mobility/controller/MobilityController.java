@@ -101,7 +101,7 @@ public class MobilityController extends AbstractSseController {
     ) {
         OffsetDateTime hour = resolveHour(hourIso);
         boolean summaryView = "summary".equalsIgnoreCase(view) || "province-summary".equalsIgnoreCase(view);
-        String endpoint = summaryView ? "/api/mobility/province-summary/stream" : "/api/mobility/stream";
+        String endpoint = summaryView ? "/api/mobility/mobility/province-summary/stream" : "/api/mobility/mobility/stream";
         String eventName = summaryView ? "mobility-province-summary-update" : "mobility-flows-update";
 
         String provinceFilter = summaryView ? provincia : fromProvince != null ? fromProvince : provincia;

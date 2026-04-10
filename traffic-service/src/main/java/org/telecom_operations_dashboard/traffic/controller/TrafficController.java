@@ -42,7 +42,7 @@ public class TrafficController extends AbstractSseController {
 
     @GetMapping(path = "/current/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamCurrentTraffic(
-            @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) long intervalMs) {
+            @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) @Max(300000) long intervalMs) {
         return createTrafficSseEmitter(
                 Math.max(intervalMs, 1000),
                 "traffic-current",
