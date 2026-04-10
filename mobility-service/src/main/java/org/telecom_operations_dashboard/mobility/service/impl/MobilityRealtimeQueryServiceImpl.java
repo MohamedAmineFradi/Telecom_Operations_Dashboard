@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.mobility.streaming.service.impl;
+package org.telecom_operations_dashboard.mobility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.dto.event.MobilityEvent;
@@ -6,7 +6,7 @@ import org.telecom_operations_dashboard.mobility.dto.insight.NetworkStatsDto;
 import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityCellProvinceFlowDto;
 import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityProvinceSummaryDto;
 import org.telecom_operations_dashboard.mobility.mapper.MobilityEventMapper;
-import org.telecom_operations_dashboard.mobility.streaming.service.MobilityRealtimeQueryService;
+import org.telecom_operations_dashboard.mobility.service.MobilityRealtimeQueryService;
 import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +54,8 @@ public class MobilityRealtimeQueryServiceImpl implements MobilityRealtimeQuerySe
         FlowKey key = new FlowKey(hour, event.cellId(), provincia);
 
         flowCache.compute(key, (k, agg) -> {
-            BigDecimal c2p = safe(event.cell2province());
-            BigDecimal p2c = safe(event.province2cell());
+            BigDecimal c2p = NormalizationUtils.safe(event.cell2province());
+            BigDecimal p2c = NormalizationUtils.safe(event.province2cell());
             if (agg == null) {
                 return new FlowAgg(c2p, p2c);
             }
@@ -167,10 +167,6 @@ public class MobilityRealtimeQueryServiceImpl implements MobilityRealtimeQuerySe
 
     private void cleanupOldBuckets(OffsetDateTime thresholdHour) {
         flowCache.keySet().removeIf(key -> key.hour().isBefore(thresholdHour));
-    }
-
-    private BigDecimal safe(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
     }
 
     private record FlowKey(OffsetDateTime hour, Integer cellId, String provincia) {

@@ -1,11 +1,11 @@
-package org.telecom_operations_dashboard.mobility.streaming.service.impl;
+package org.telecom_operations_dashboard.mobility.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.telecom_operations_dashboard.common.dto.event.MobilityEvent;
-import org.telecom_operations_dashboard.mobility.streaming.service.MobilityRealtimeQueryService;
+import org.telecom_operations_dashboard.mobility.service.MobilityRealtimeQueryService;
 
 @Component
 @RequiredArgsConstructor

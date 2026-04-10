@@ -1,4 +1,4 @@
-package org.telecom_operations_dashboard.mobility.streaming.service;
+package org.telecom_operations_dashboard.mobility.service;
 
 import org.telecom_operations_dashboard.common.dto.event.MobilityEvent;
 import org.telecom_operations_dashboard.mobility.dto.insight.NetworkStatsDto;

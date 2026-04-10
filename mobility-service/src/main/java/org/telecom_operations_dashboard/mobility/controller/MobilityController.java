@@ -3,23 +3,23 @@ package org.telecom_operations_dashboard.mobility.controller;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.common.util.DateTimeParser;
 import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.telecom_operations_dashboard.mobility.dto.insight.NetworkStatsDto;
 import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityCellProvinceFlowDto;
 import org.telecom_operations_dashboard.mobility.dto.mobility.MobilityProvinceSummaryDto;
-import org.telecom_operations_dashboard.mobility.streaming.service.impl.MobilityRawSseBroadcaster;
-import org.telecom_operations_dashboard.mobility.streaming.service.MobilityRealtimeQueryService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.telecom_operations_dashboard.mobility.service.MobilityRealtimeQueryService;
+import org.telecom_operations_dashboard.mobility.service.impl.MobilityRawSseBroadcaster;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 @Validated
 @ConditionalOnProperty(name = "app.service", havingValue = "mobility")
-public class InsightsController extends AbstractSseController {
+public class MobilityController extends AbstractSseController {
 
     private final MobilityRealtimeQueryService mobilityRealtimeQueryService;
     private final MobilityRawSseBroadcaster mobilityRawSseBroadcaster;
@@ -43,7 +43,7 @@ public class InsightsController extends AbstractSseController {
 
     // Cell-scoped flows
     @GetMapping({"/mobility/cell-flows", "/cell-flows"})
-    public ResponseEntity<List<MobilityCellProvinceFlowDto>> getCellFlows(
+    public ResponseEntity<List<MobilityCellProvinceFlowDto>> getMobilityCellFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "fromCell", required = false) Integer fromCellId,
             @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit) {
@@ -53,8 +53,8 @@ public class InsightsController extends AbstractSseController {
     }
 
     // Province-scoped flows
-      @GetMapping("/province-flows")
-    public ResponseEntity<List<MobilityCellProvinceFlowDto>> getProvinceFlows(
+        @GetMapping("/province-flows")
+        public ResponseEntity<List<MobilityCellProvinceFlowDto>> getMobilityProvinceFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "from", required = false) String fromProvince,
             @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit) {
@@ -63,8 +63,8 @@ public class InsightsController extends AbstractSseController {
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeFlowsAtHour(hour, null, fromProvince, limit));
     }
 
-      @GetMapping("/province-summary")
-    public ResponseEntity<List<MobilityProvinceSummaryDto>> getProvinceSummaries(
+        @GetMapping("/province-summary")
+        public ResponseEntity<List<MobilityProvinceSummaryDto>> getMobilityProvinceSummaries(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "provincia", required = false) String provincia,
             @RequestParam(name = "limit", defaultValue = "100") @Min(1) int limit) {
@@ -74,13 +74,12 @@ public class InsightsController extends AbstractSseController {
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<NetworkStatsDto> getNetworkStats() {
+    public ResponseEntity<NetworkStatsDto> getMobilityNetworkStats() {
         log.info("Network stats requested (realtime mobility cache)");
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeNetworkStats());
     }
 
-
-        @GetMapping(
+    @GetMapping(
             path = {
                 "/mobility/stream",
                 "/mobility/current/stream",
@@ -90,8 +89,8 @@ public class InsightsController extends AbstractSseController {
                 "/mobility/province-summary/stream"
             },
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
-        )
-    public SseEmitter streamMobilityFlows(
+    )
+    public SseEmitter streamCurrentMobility(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "view", defaultValue = "flows") String view,
             @RequestParam(name = "fromCell", required = false) Integer fromCell,
@@ -105,15 +104,15 @@ public class InsightsController extends AbstractSseController {
         String endpoint = summaryView ? "/api/mobility/province-summary/stream" : "/api/mobility/stream";
         String eventName = summaryView ? "mobility-province-summary-update" : "mobility-flows-update";
 
-        String provinceFilter = summaryView ? provincia : (fromProvince != null ? fromProvince : provincia);
+        String provinceFilter = summaryView ? provincia : fromProvince != null ? fromProvince : provincia;
 
         return createMobilitySseEmitter(
                 intervalMs,
-            eventName,
-            () -> summaryView
-                ? realtimeProvinceSummaries(hour, provinceFilter, limit)
-                : realtimeMobilityFlows(hour, fromCell, provinceFilter, limit),
-            endpoint
+                eventName,
+                () -> summaryView
+                        ? realtimeProvinceSummaries(hour, provinceFilter, limit)
+                        : realtimeMobilityFlows(hour, fromCell, provinceFilter, limit),
+                endpoint
         );
     }
 
@@ -146,7 +145,7 @@ public class InsightsController extends AbstractSseController {
             }
             return NormalizationUtils.truncateToHour(OffsetDateTime.now(ZoneOffset.UTC));
         }
-        return DateTimeParser.parse(hourIso, "hour");
+        return DateTimeParser.parseIfPresent(hourIso, "hour").orElseThrow();
     }
 
     private SseEmitter createMobilitySseEmitter(
@@ -157,7 +156,7 @@ public class InsightsController extends AbstractSseController {
     ) {
         long safeInterval = Math.max(intervalMs, 1000);
         long sseTimeoutMs = Math.max(safeInterval * 3, 15_000L);
-        
+
         return createScheduledEmitter(
                 safeInterval,
                 sseTimeoutMs,
