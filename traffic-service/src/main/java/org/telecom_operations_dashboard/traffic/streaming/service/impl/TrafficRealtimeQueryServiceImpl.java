@@ -41,8 +41,17 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
     private final TrafficCongestionProperties congestionProperties;
 
     @Override
+    public List<HourlyTrafficDto> getHeatmapAtLatest(Integer limit) {
+        OffsetDateTime latest = resolveLatestHour();
+        if (latest == null) {
+            return List.of();
+        }
+        return getHeatmapAtHour(latest, limit);
+    }
+
+    @Override
     public List<HourlyTrafficDto> getHeatmapAtHour(OffsetDateTime hour, Integer limit) {
-        OffsetDateTime resolvedHour = resolveHourOrLatest(hour);
+        OffsetDateTime resolvedHour = hour == null ? resolveLatestHour() : NormalizationUtils.truncateToHour(hour);
         if (resolvedHour == null) {
             return List.of();
         }
@@ -90,11 +99,20 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
 
     @Override
     public List<CongestionCellDto> getCongestionAtHour(OffsetDateTime hour, Integer limit) {
-        OffsetDateTime resolvedHour = resolveHourOrLatest(hour);
+        OffsetDateTime resolvedHour = hour == null ? resolveLatestHour() : NormalizationUtils.truncateToHour(hour);
         if (resolvedHour == null) {
             return List.of();
         }
         return getCongestionInRange(resolvedHour, resolvedHour, limit);
+    }
+
+    @Override
+    public List<CongestionCellDto> getCongestionAtLatest(Integer limit) {
+        OffsetDateTime latest = resolveLatestHour();
+        if (latest == null) {
+            return List.of();
+        }
+        return getCongestionAtHour(latest, limit);
     }
 
     @Override
@@ -116,11 +134,7 @@ public class TrafficRealtimeQueryServiceImpl implements TrafficRealtimeQueryServ
     }
 
     @Override
-    public OffsetDateTime resolveHourOrLatest(OffsetDateTime requestedHour) {
-        if (requestedHour != null) {
-            return NormalizationUtils.truncateToHour(requestedHour);
-        }
-
+    public OffsetDateTime resolveLatestHour() {
         Optional<ReadOnlyKeyValueStore<String, TrafficEvent>> storeOpt = getStore();
         if (storeOpt.isEmpty()) {
             return null;

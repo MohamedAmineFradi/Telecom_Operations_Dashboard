@@ -12,7 +12,7 @@ app:
 
 kafka:
   topics:
-    traffic: ${KAFKA_TOPIC_TRAFFIC:activity.traffic}
+    traffic: ${KAFKA_TOPIC_TRAFFIC:activity.total}
 
 spring:
   application:
@@ -28,9 +28,9 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: org.telecom_operations_dashboard.common.dto.event
+        spring.json.trusted.packages: "*"
         spring.json.value.default.type: org.telecom_operations_dashboard.common.dto.event.TrafficEvent
-        spring.json.use.type.headers: false
+        spring.json.use.type.headers: true
 
 eureka:
   client:

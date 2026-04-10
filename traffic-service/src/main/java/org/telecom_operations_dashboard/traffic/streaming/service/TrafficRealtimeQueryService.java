@@ -8,13 +8,17 @@ import java.util.List;
 
 public interface TrafficRealtimeQueryService {
 
+    List<HourlyTrafficDto> getHeatmapAtLatest(Integer limit);
+
     List<HourlyTrafficDto> getHeatmapAtHour(OffsetDateTime hour, Integer limit);
 
     List<HourlyTrafficDto> getHeatmapInRange(OffsetDateTime start, OffsetDateTime end, Integer limit);
+
+    List<CongestionCellDto> getCongestionAtLatest(Integer limit);
 
     List<CongestionCellDto> getCongestionAtHour(OffsetDateTime hour, Integer limit);
 
     List<CongestionCellDto> getCongestionInRange(OffsetDateTime start, OffsetDateTime end, Integer limit);
 
-    OffsetDateTime resolveHourOrLatest(OffsetDateTime requestedHour);
+    OffsetDateTime resolveLatestHour();
 }

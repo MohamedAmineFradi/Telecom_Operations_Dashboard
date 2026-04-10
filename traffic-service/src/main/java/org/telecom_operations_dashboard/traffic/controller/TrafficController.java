@@ -43,7 +43,7 @@ public class TrafficController extends AbstractSseController {
         return createTrafficSseEmitter(
                 Math.max(intervalMs, 1000),
                 "traffic-current",
-                () -> trafficRealtimeQueryService.getHeatmapAtHour(null, 1000),
+            () -> trafficRealtimeQueryService.getHeatmapAtLatest(1000),
                 "/api/traffic/current/stream");
     }
 
@@ -126,7 +126,7 @@ public class TrafficController extends AbstractSseController {
     // --- Helper Methods ---
 
     private HistoricalRange resolveHistoryRange(int durationHours) {
-        OffsetDateTime end = resolveHour(null);
+        OffsetDateTime end = resolveLatestHour();
         OffsetDateTime start = end.minusHours(durationHours);
         return new HistoricalRange(start, end);
     }
@@ -136,10 +136,14 @@ public class TrafficController extends AbstractSseController {
 
     private OffsetDateTime resolveHour(String hourIso) {
         if (hourIso == null || hourIso.isBlank()) {
-            OffsetDateTime latest = trafficRealtimeQueryService.resolveHourOrLatest(null);
-            return latest != null ? latest : OffsetDateTime.now(ZoneOffset.UTC).withMinute(0).withSecond(0).withNano(0);
+            return resolveLatestHour();
         }
         return DateTimeParser.parse(hourIso, "hour");
+    }
+
+    private OffsetDateTime resolveLatestHour() {
+        OffsetDateTime latest = trafficRealtimeQueryService.resolveLatestHour();
+        return latest != null ? latest : OffsetDateTime.now(ZoneOffset.UTC).withMinute(0).withSecond(0).withNano(0);
     }
 
     private SseEmitter createTrafficSseEmitter(

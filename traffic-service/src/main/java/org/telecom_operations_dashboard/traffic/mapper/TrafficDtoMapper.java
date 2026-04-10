@@ -13,16 +13,7 @@ public class TrafficDtoMapper {
 
     public HourlyTrafficDto toHourlyTrafficDto(TrafficEvent event) {
         if (event == null) return null;
-        return new HourlyTrafficDto(
-                event.getHour(),
-                event.getCellId(),
-                event.getTotalSmsin(),
-                event.getTotalSmsout(),
-                event.getTotalCallin(),
-                event.getTotalCallout(),
-                event.getTotalInternet(),
-                event.getTotalActivity()
-        );
+        return new HourlyTrafficDto(event.getHour(), event.getCellId(), event.getTotalActivity());
     }
 
     public CongestionCellDto toCongestionCellDto(TrafficEvent event, TrafficCongestionProperties properties) {

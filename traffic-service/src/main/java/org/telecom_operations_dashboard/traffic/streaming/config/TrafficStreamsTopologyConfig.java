@@ -29,7 +29,7 @@ public class TrafficStreamsTopologyConfig {
             StreamsBuilder streamsBuilder,
             org.springframework.core.env.Environment environment
     ) {
-        String topic = environment.getProperty("kafka.topics.traffic", "activity.traffic");
+        String topic = environment.getProperty("kafka.topics.traffic", "activity.total");
         var trafficEventSerde = TrafficEventSerde.create();
 
         KStream<String, TrafficEvent> source = streamsBuilder.stream(
@@ -97,11 +97,6 @@ public class TrafficStreamsTopologyConfig {
         TrafficEvent normalized = new TrafficEvent();
         normalized.setHour(NormalizationUtils.truncateToHour(event.getHour()));
         normalized.setCellId(event.getCellId());
-        normalized.setTotalSmsin(safe(event.getTotalSmsin()));
-        normalized.setTotalSmsout(safe(event.getTotalSmsout()));
-        normalized.setTotalCallin(safe(event.getTotalCallin()));
-        normalized.setTotalCallout(safe(event.getTotalCallout()));
-        normalized.setTotalInternet(safe(event.getTotalInternet()));
         normalized.setTotalActivity(safe(event.getTotalActivity()));
         return normalized;
     }
@@ -109,21 +104,8 @@ public class TrafficStreamsTopologyConfig {
     private TrafficEvent accumulate(TrafficEvent incoming, TrafficEvent aggregate) {
         aggregate.setHour(incoming.getHour());
         aggregate.setCellId(incoming.getCellId());
-        aggregate.setTotalSmsin(safe(aggregate.getTotalSmsin()).add(safe(incoming.getTotalSmsin())));
-        aggregate.setTotalSmsout(safe(aggregate.getTotalSmsout()).add(safe(incoming.getTotalSmsout())));
-        aggregate.setTotalCallin(safe(aggregate.getTotalCallin()).add(safe(incoming.getTotalCallin())));
-        aggregate.setTotalCallout(safe(aggregate.getTotalCallout()).add(safe(incoming.getTotalCallout())));
-        aggregate.setTotalInternet(safe(aggregate.getTotalInternet()).add(safe(incoming.getTotalInternet())));
-        aggregate.setTotalActivity(totalActivity(aggregate));
+        aggregate.setTotalActivity(safe(aggregate.getTotalActivity()).add(safe(incoming.getTotalActivity())));
         return aggregate;
-    }
-
-    private BigDecimal totalActivity(TrafficEvent event) {
-        return safe(event.getTotalSmsin())
-                .add(safe(event.getTotalSmsout()))
-                .add(safe(event.getTotalCallin()))
-                .add(safe(event.getTotalCallout()))
-                .add(safe(event.getTotalInternet()));
     }
 
     private BigDecimal safe(BigDecimal value) {

@@ -1,6 +1,5 @@
 package org.telecom_operations_dashboard.traffic.streaming.service.impl;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

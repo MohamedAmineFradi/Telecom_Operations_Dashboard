@@ -1,6 +1,10 @@
 server:
   port: 8107
 
+kafka:
+  topics:
+    internet: ${KAFKA_TOPIC_INTERNET:activity.internet}
+
 spring:
   application:
     name: INTERNET-SERVICE
@@ -11,8 +15,9 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: org.telecom_operations_dashboard.common.dto.event
-        spring.json.value.default.type: org.telecom_operations_dashboard.common.dto.event.TrafficEvent
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: org.telecom_operations_dashboard.common.dto.event.InternetEvent
+        spring.json.use.type.headers: true
 
 eureka:
   client:

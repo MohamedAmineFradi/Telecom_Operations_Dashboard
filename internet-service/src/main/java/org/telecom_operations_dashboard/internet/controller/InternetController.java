@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.common.dto.event.InternetEvent;
 import org.telecom_operations_dashboard.internet.mapper.InternetDtoMapper;
-import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -22,22 +22,16 @@ public class InternetController extends AbstractSseController {
     private final ConcurrentMap<Integer, InternetEvent> currentEvents = new ConcurrentHashMap<>();
 
     @KafkaListener(
-        topics = "activity.traffic",
+        topics = "${kafka.topics.internet:activity.internet}",
         groupId = "${app.kafka.sse.group-id:${spring.application.name:${app.service:service}}-sse-${HOSTNAME:${random.uuid}}}"
     )
-    public void listenInternetEvents(@org.springframework.messaging.handler.annotation.Payload TrafficEvent event) {
-        if (event == null || event.getCellId() == null) {
+    public void listenInternetEvents(@Payload InternetEvent event) {
+        if (event == null || event.cellId() == null) {
             return;
         }
 
-        InternetEvent internetEvent = new InternetEvent(
-                event.getHour(),
-                event.getCellId(),
-                event.getTotalInternet()
-        );
-
-        currentEvents.put(event.getCellId(), internetEvent);
-        broadcastToRawEmitters("internet-raw", internetEvent);
+        currentEvents.put(event.cellId(), event);
+        broadcastToRawEmitters("internet-raw", event);
     }
 
     @GetMapping(path = "/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

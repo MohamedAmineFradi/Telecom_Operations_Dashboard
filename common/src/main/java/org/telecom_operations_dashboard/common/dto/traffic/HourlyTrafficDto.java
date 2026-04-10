@@ -13,10 +13,5 @@ import java.time.OffsetDateTime;
 public class HourlyTrafficDto {
     private OffsetDateTime hour;
     private Integer cellId;
-    private BigDecimal totalSmsin;
-    private BigDecimal totalSmsout;
-    private BigDecimal totalCallin;
-    private BigDecimal totalCallout;
-    private BigDecimal totalInternet;
     private BigDecimal totalActivity;
 }

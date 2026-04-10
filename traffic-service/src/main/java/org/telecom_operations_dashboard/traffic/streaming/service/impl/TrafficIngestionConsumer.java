@@ -19,7 +19,7 @@ public class TrafficIngestionConsumer {
 
     @KafkaListener(
             id = "traffic-ingestion-listener",
-            topics = "${kafka.topics.traffic:activity.traffic}",
+            topics = "${kafka.topics.traffic:activity.total}",
             groupId = "${app.kafka.raw.group-id:traffic-raw-group}"
     )
     public void onTrafficEvent(TrafficEvent event) {

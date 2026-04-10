@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.sms.mapper.SmsDtoMapper;
 import org.telecom_operations_dashboard.common.dto.event.SmsEvent;
-import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -22,23 +22,16 @@ public class SmsController extends AbstractSseController {
     private final ConcurrentMap<Integer, SmsEvent> currentEvents = new ConcurrentHashMap<>();
 
     @KafkaListener(
-        topics = "activity.traffic",
+        topics = "${kafka.topics.sms:activity.sms}",
         groupId = "${app.kafka.sse.group-id:${spring.application.name:${app.service:service}}-sse-${HOSTNAME:${random.uuid}}}"
     )
-    public void listenSmsEvents(@org.springframework.messaging.handler.annotation.Payload TrafficEvent event) {
-        if (event == null || event.getCellId() == null) {
+    public void listenSmsEvents(@Payload SmsEvent event) {
+        if (event == null || event.cellId() == null) {
             return;
         }
 
-        SmsEvent smsEvent = new SmsEvent(
-                event.getHour(),
-                event.getCellId(),
-                event.getTotalSmsin(),
-                event.getTotalSmsout()
-        );
-
-        currentEvents.put(event.getCellId(), smsEvent);
-        broadcastToRawEmitters("sms-raw", smsEvent);
+        currentEvents.put(event.cellId(), event);
+        broadcastToRawEmitters("sms-raw", event);
     }
 
     @GetMapping(path = "/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

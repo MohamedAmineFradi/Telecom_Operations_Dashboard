@@ -1,5 +1,8 @@
 package org.example.producer.service;
 
+import org.telecom_operations_dashboard.common.dto.event.CallEvent;
+import org.telecom_operations_dashboard.common.dto.event.InternetEvent;
+import org.telecom_operations_dashboard.common.dto.event.SmsEvent;
 import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 import org.example.producer.model.HourlyTrafficRecord;
 import org.example.producer.repository.HourlyTrafficRecordRepository;
@@ -15,7 +18,10 @@ import java.util.concurrent.CompletableFuture;
 public class TrafficEventProducer extends AbstractReplayProducer<HourlyTrafficRecord> {
 
     private static final String WATERMARK_STREAM = "traffic";
-    private static final String TOPIC_TRAFFIC  = "activity.traffic";
+    private static final String TOPIC_CALL = "activity.call";
+    private static final String TOPIC_SMS = "activity.sms";
+    private static final String TOPIC_INTERNET = "activity.internet";
+    private static final String TOPIC_TOTAL = "activity.total";
 
     private final HourlyTrafficRecordRepository repository;
 
@@ -37,11 +43,32 @@ public class TrafficEventProducer extends AbstractReplayProducer<HourlyTrafficRe
     protected List<CompletableFuture<?>> sendKafkaEvents(HourlyTrafficRecord r) {
         String key = String.valueOf(r.getCellId());
         return List.of(
-            kafkaTemplate.send(TOPIC_TRAFFIC, key,
-                    new TrafficEvent(r.getHour(), r.getCellId(),
-                            r.getTotalSmsin(), r.getTotalSmsout(),
-                            r.getTotalCallin(), r.getTotalCallout(),
-                            r.getTotalInternet(), r.getTotalActivity()))
+            kafkaTemplate.send(TOPIC_CALL, key,
+                new CallEvent(
+                    r.getHour(),
+                    r.getCellId(),
+                    r.getTotalCallin(),
+                    r.getTotalCallout()
+                )),
+            kafkaTemplate.send(TOPIC_SMS, key,
+                new SmsEvent(
+                    r.getHour(),
+                    r.getCellId(),
+                    r.getTotalSmsin(),
+                    r.getTotalSmsout()
+                )),
+            kafkaTemplate.send(TOPIC_INTERNET, key,
+                new InternetEvent(
+                    r.getHour(),
+                    r.getCellId(),
+                    r.getTotalInternet()
+                )),
+            kafkaTemplate.send(TOPIC_TOTAL, key,
+                new TrafficEvent(
+                    r.getHour(),
+                    r.getCellId(),
+                    r.getTotalActivity()
+                ))
         );
     }
 

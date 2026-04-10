@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.controller.AbstractSseController;
 import org.telecom_operations_dashboard.call.mapper.CallDtoMapper;
 import org.telecom_operations_dashboard.common.dto.event.CallEvent;
-import org.telecom_operations_dashboard.common.dto.event.TrafficEvent;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,23 +22,16 @@ public class CallController extends AbstractSseController {
     private final ConcurrentMap<Integer, CallEvent> currentEvents = new ConcurrentHashMap<>();
 
     @KafkaListener(
-        topics = "activity.traffic",
+        topics = "${kafka.topics.call:activity.call}",
         groupId = "${app.kafka.sse.group-id:${spring.application.name:${app.service:service}}-sse-${HOSTNAME:${random.uuid}}}"
     )
-    public void listenCallEvents(@Payload TrafficEvent event) {
-        if (event == null || event.getCellId() == null) {
+    public void listenCallEvents(@Payload CallEvent event) {
+        if (event == null || event.cellId() == null) {
             return;
         }
 
-        CallEvent callEvent = new CallEvent(
-                event.getHour(),
-                event.getCellId(),
-                event.getTotalCallin(),
-                event.getTotalCallout()
-        );
-
-        currentEvents.put(event.getCellId(), callEvent);
-        broadcastToRawEmitters("call-raw", callEvent);
+        currentEvents.put(event.cellId(), event);
+        broadcastToRawEmitters("call-raw", event);
     }
 
     @GetMapping(path = "/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
