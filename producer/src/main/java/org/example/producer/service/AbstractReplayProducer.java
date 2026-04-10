@@ -30,7 +30,6 @@ public abstract class AbstractReplayProducer<T> {
     protected final SimulationProperties simulationProperties;
 
     private static final Duration DEFAULT_SLOT_STEP = Duration.ofHours(1);
-    private static final long PAGE_SEND_TIMEOUT_SECONDS = 15L;
 
     protected AbstractReplayProducer(
             KafkaTemplate<String, Object> kafkaTemplate,
@@ -81,7 +80,7 @@ public abstract class AbstractReplayProducer<T> {
 
                 CompletableFuture
                         .allOf(sendFutures.toArray(CompletableFuture[]::new))
-                        .get(PAGE_SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    .get(getPageSendTimeoutSeconds(), TimeUnit.SECONDS);
             } catch (Exception exception) {
                 log.error("{} replay failed for slot [{} -> {})", getStreamName(), slotStart, slotEnd, exception);
                 return;
@@ -121,6 +120,14 @@ public abstract class AbstractReplayProducer<T> {
             return DEFAULT_SLOT_STEP;
         }
         return step;
+    }
+
+    protected long getPageSendTimeoutSeconds() {
+        int timeoutSeconds = simulationProperties.getPageSendTimeoutSeconds();
+        if (timeoutSeconds <= 0) {
+            return 15L;
+        }
+        return timeoutSeconds;
     }
 
     protected OffsetDateTime normalizeToUtcHourBoundary(OffsetDateTime timestamp) {

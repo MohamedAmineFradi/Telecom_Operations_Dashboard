@@ -34,4 +34,9 @@ public class SimulationProperties {
      * The number of records to process in a single batch.
      */
     private int batchSize = 100;
+
+    /**
+     * Max time to wait for one page of Kafka sends to complete.
+     */
+    private int pageSendTimeoutSeconds = 15;
 }

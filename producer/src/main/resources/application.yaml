@@ -49,6 +49,7 @@ app:
     end: ${APP_SIMULATION_END:2013-11-07T23:59:59Z}
     step: ${APP_SIMULATION_STEP:PT1H}
     batch-size: ${APP_SIMULATION_BATCH_SIZE:100}
+    page-send-timeout-seconds: ${APP_SIMULATION_PAGE_SEND_TIMEOUT_SECONDS:30}
 
 producer:
   poll:
