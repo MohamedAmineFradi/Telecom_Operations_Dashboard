@@ -1,19 +1,13 @@
 package org.telecom_operations_dashboard.internet.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.dto.internet.HourlyInternetDto;
 import org.telecom_operations_dashboard.common.dto.event.InternetEvent;
 import org.telecom_operations_dashboard.internet.model.HourlyInternetView;
+import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-
 @Component
-@RequiredArgsConstructor
 public class InternetDtoMapper {
-
-    private final InternetMapper internetMapper;
-
 
 
     public HourlyInternetDto toHourlyInternetDto(HourlyInternetView row) {
@@ -21,7 +15,7 @@ public class InternetDtoMapper {
         return new HourlyInternetDto(
                 row.getCellId(),
                 hour,
-                internetMapper.safe(row.getTotalInternet())
+                NormalizationUtils.safe(row.getTotalInternet())
         );
     }
     
@@ -30,7 +24,7 @@ public class InternetDtoMapper {
         return new HourlyInternetDto(
             event.cellId(),
             event.hour(),
-                internetMapper.safe(event.totalInternet())
+                NormalizationUtils.safe(event.totalInternet())
         );
     }
 }
