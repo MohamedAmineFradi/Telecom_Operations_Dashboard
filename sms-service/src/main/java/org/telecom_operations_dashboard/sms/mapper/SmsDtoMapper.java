@@ -1,29 +1,24 @@
 package org.telecom_operations_dashboard.sms.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.dto.event.SmsEvent;
 import org.telecom_operations_dashboard.common.dto.sms.HourlySmsDto;
-import org.telecom_operations_dashboard.sms.mapper.SmsMapper;
 import org.telecom_operations_dashboard.sms.model.HourlySmsView;
+import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.springframework.stereotype.Component;
 
 
 
 @Component
-@RequiredArgsConstructor
 public class SmsDtoMapper {
-
-    private final SmsMapper smsMapper;
-
 
     public HourlySmsDto toHourlySmsDto(HourlySmsView row) {
         java.time.OffsetDateTime hour = row.getHour() == null ? null : java.time.OffsetDateTime.ofInstant(row.getHour(), java.time.ZoneId.systemDefault());
         return new HourlySmsDto(
                 row.getCellId(),
                 hour,
-                smsMapper.safe(row.getTotalSmsin()),
-                smsMapper.safe(row.getTotalSmsout()),
-                smsMapper.safe(row.getTotalActivity())
+                NormalizationUtils.safe(row.getTotalSmsin()),
+                NormalizationUtils.safe(row.getTotalSmsout()),
+                NormalizationUtils.safe(row.getTotalActivity())
         );
     }
 
@@ -32,9 +27,9 @@ public class SmsDtoMapper {
         return new HourlySmsDto(
                 event.cellId(),
                 event.hour(),
-                smsMapper.safe(event.totalSmsin()),
-                smsMapper.safe(event.totalSmsout()),
-                smsMapper.safe(event.totalSmsin()).add(smsMapper.safe(event.totalSmsout()))
+                NormalizationUtils.safe(event.totalSmsin()),
+                NormalizationUtils.safe(event.totalSmsout()),
+                NormalizationUtils.safe(event.totalSmsin()).add(NormalizationUtils.safe(event.totalSmsout()))
         );
     }
 }
