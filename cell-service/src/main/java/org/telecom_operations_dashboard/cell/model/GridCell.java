@@ -9,8 +9,6 @@ import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Polygon;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "dim_grid_milan")

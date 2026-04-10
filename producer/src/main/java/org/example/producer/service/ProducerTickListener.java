@@ -19,7 +19,7 @@ public class ProducerTickListener {
     private final List<AbstractReplayProducer<?>> producers;
 
     public ProducerTickListener(List<AbstractReplayProducer<?>> producers) {
-        this.producers = producers != null ? producers : java.util.List.of();
+        this.producers = producers != null ? producers : List.of();
     }
 
     @jakarta.annotation.PostConstruct

@@ -8,8 +8,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.MultiPolygon;
 
-import java.util.HashSet;
-import java.util.Set;
 @Entity
 @Table(name = "dim_provinces_it")
 @Getter
