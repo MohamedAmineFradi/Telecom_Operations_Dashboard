@@ -328,6 +328,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/PageAlertDto'
 
+  /api/alerts/high/stream:
+    get:
+      tags: [alerts]
+      summary: High severity alerts SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of AlertDto[] filtered to HIGH severity
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/alerts/critical/stream:
+    get:
+      tags: [alerts]
+      summary: Critical severity alerts SSE stream
+      parameters:
+        - $ref: '#/components/parameters/IntervalMs'
+      responses:
+        "200":
+          description: text/event-stream of AlertDto[] filtered to CRITICAL severity
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
   /api/alerts/{id}/resolve:
     post:
       tags: [alerts]

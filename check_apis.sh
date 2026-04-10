@@ -105,6 +105,8 @@ BUSINESS_CHECKS=(
   "sms-service|http://localhost:8105/api/sms/current/stream?intervalMs=1000|sse-200"
   "call-service|http://localhost:8106/api/call/current/stream?intervalMs=1000|sse-200"
   "internet-service|http://localhost:8107/api/internet/current/stream?intervalMs=1000|sse-200"
+  "alert-service-high-stream|http://localhost:8101/api/alerts/high/stream?intervalMs=1000|sse-event"
+  "alert-service-critical-stream|http://localhost:8101/api/alerts/critical/stream?intervalMs=1000|sse-event"
   "alert-service-list|http://localhost:8101/api/alerts|json-2xx"
   "alert-service|http://localhost:8101/api/alerts/page?page=0&size=1|json-2xx"
   "cell-service-list|http://localhost:8102/api/cells|json-2xx"
@@ -130,6 +132,8 @@ GATEWAY_BUSINESS_CHECKS=(
   "gateway-sms|http://localhost:8090/api/sms/current/stream?intervalMs=1000|sse-200"
   "gateway-call|http://localhost:8090/api/call/current/stream?intervalMs=1000|sse-200"
   "gateway-internet|http://localhost:8090/api/internet/current/stream?intervalMs=1000|sse-200"
+  "gateway-alerts-high-stream|http://localhost:8090/api/alerts/high/stream?intervalMs=1000|sse-event"
+  "gateway-alerts-critical-stream|http://localhost:8090/api/alerts/critical/stream?intervalMs=1000|sse-event"
   "gateway-alerts-list|http://localhost:8090/api/alerts|json-2xx"
   "gateway-alerts|http://localhost:8090/api/alerts/page?page=0&size=1|json-2xx"
   "gateway-cells-list|http://localhost:8090/api/cells|json-2xx"
@@ -215,6 +219,14 @@ check_one() {
   elif [[ "$kind" == "sse-200" ]]; then
     if [[ "$code" == "200" ]] && grep -qi '^content-type:.*text/event-stream' "$headers"; then
       echo "PASS  $name -> $url (HTTP $code, SSE)"
+      rm -f "$body" "$headers"
+      return 0
+    fi
+  elif [[ "$kind" == "sse-event" ]]; then
+    if [[ "$code" == "200" ]] \
+      && grep -qi '^content-type:.*text/event-stream' "$headers" \
+      && grep -Eiq '^(event|data):' "$body"; then
+      echo "PASS  $name -> $url (HTTP $code, SSE event)"
       rm -f "$body" "$headers"
       return 0
     fi

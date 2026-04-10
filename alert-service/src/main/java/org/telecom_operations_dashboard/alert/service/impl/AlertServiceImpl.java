@@ -30,17 +30,20 @@ public class AlertServiceImpl implements AlertService {
     private final AlertMapper alertMapper;
     private final RestCellInfoClient restCellInfoClient;
     private final EmailService emailService;
+    private final AlertSseBroadcaster alertSseBroadcaster;
 
     public AlertServiceImpl(
             AlertRepository alertRepository,
             AlertMapper alertMapper,
             RestCellInfoClient restCellInfoClient,
-            EmailService emailService
+            EmailService emailService,
+            AlertSseBroadcaster alertSseBroadcaster
     ) {
         this.alertRepository = alertRepository;
         this.alertMapper = alertMapper;
         this.restCellInfoClient = restCellInfoClient;
         this.emailService = emailService;
+        this.alertSseBroadcaster = alertSseBroadcaster;
     }
 
     @Override
@@ -108,8 +111,16 @@ public class AlertServiceImpl implements AlertService {
             "Congestion score " + String.format("%.2f", event.getScore()) + "% at hour " + event.getHour() + locationInfo
         );
 
-        alertRepository.save(alert);
+        Alert savedAlert = alertRepository.save(alert);
         log.info("Asynchronous alert generated for cell {} (Severity: {})", event.getCellId(), event.getSeverity());
+
+        AlertDto alertDto = alertMapper.toDto(savedAlert);
+        if ("CRITICAL".equalsIgnoreCase(event.getSeverity())) {
+            alertSseBroadcaster.broadcastCriticalAlert(alertDto);
+        }
+        if ("HIGH".equalsIgnoreCase(event.getSeverity())) {
+            alertSseBroadcaster.broadcastHighAlert(alertDto);
+        }
 
         if ("HIGH".equals(event.getSeverity())) {
             emailService.sendHighCongestionAlert(
