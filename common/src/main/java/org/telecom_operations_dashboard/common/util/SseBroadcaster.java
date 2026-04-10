@@ -2,10 +2,12 @@ package org.telecom_operations_dashboard.common.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Utility to safely broadcast events to a collection of SseEmitters.
@@ -37,6 +39,47 @@ public class SseBroadcaster {
                 emitters.remove(emitter);
             }
         }
+    }
+
+    public static <T> void broadcastJson(Collection<SseEmitter> emitters, String eventName, T data) {
+        if (emitters == null || emitters.isEmpty() || data == null) {
+            return;
+        }
+
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name(eventName)
+                        .data(data, MediaType.APPLICATION_JSON)
+                        .id(String.valueOf(System.currentTimeMillis())));
+            } catch (IOException | IllegalStateException ex) {
+                log.debug("Removing disconnected SSE emitter: {}", ex.getMessage());
+                emitters.remove(emitter);
+            } catch (Exception ex) {
+                log.warn("Failed to send SSE event: {}", ex.getMessage());
+                emitters.remove(emitter);
+            }
+        }
+    }
+
+    public static SseEmitter registerEmitter(List<SseEmitter> emitters, String connectionEventName) {
+        SseEmitter emitter = new SseEmitter(0L);
+        emitters.add(emitter);
+
+        Runnable cleanup = () -> emitters.remove(emitter);
+        emitter.onCompletion(cleanup);
+        emitter.onTimeout(cleanup);
+        emitter.onError(e -> cleanup.run());
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(connectionEventName)
+                    .data("connected", MediaType.TEXT_PLAIN));
+        } catch (IOException | IllegalStateException ex) {
+            cleanup.run();
+        }
+
+        return emitter;
     }
 
     /**

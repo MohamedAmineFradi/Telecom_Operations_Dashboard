@@ -4,8 +4,6 @@ import org.telecom_operations_dashboard.common.exception.ResourceNotFoundExcepti
 import org.telecom_operations_dashboard.common.dto.cell.CellDetailsDto;
 import org.telecom_operations_dashboard.common.dto.cell.GridCellDto;
 import org.telecom_operations_dashboard.cell.model.GridCell;
-import org.telecom_operations_dashboard.common.model.GridCellView;
-import org.telecom_operations_dashboard.cell.model.GridCell;
 import org.telecom_operations_dashboard.cell.repository.GridCellRepository;
 import org.telecom_operations_dashboard.cell.service.CellService;
 import org.slf4j.Logger;
@@ -30,8 +28,8 @@ public class CellServiceImpl implements CellService {
         this.gridCellRepository = gridCellRepository;
     }
 
-        @Override
-        public CellDetailsDto getCellDetails(Integer cellId) {
+    @Override
+    public CellDetailsDto getCellDetails(Integer cellId) {
         GridCell cell = gridCellRepository.findById(cellId)
             .orElseThrow(() -> new ResourceNotFoundException("Cell not found: " + cellId));
 

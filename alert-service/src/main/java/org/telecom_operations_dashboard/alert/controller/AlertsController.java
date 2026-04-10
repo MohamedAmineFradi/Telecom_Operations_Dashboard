@@ -36,7 +36,7 @@ public class AlertsController {
     public ResponseEntity<List<AlertDto>> getAlerts(
             @RequestParam(name = "since", required = false) String sinceIso
     ) {
-        OffsetDateTime since = sinceIso != null ? DateTimeParser.parse(sinceIso, "since") : null;
+        OffsetDateTime since = DateTimeParser.parseIfPresent(sinceIso, "since").orElse(null);
         log.info("Alerts requested since {}", sinceIso);
         return ResponseEntity.ok(alertService.getAlertsSince(since));
     }
@@ -46,7 +46,7 @@ public class AlertsController {
             @RequestParam(name = "since", required = false) String sinceIso,
             Pageable pageable
     ) {
-        OffsetDateTime since = sinceIso != null ? DateTimeParser.parse(sinceIso, "since") : null;
+        OffsetDateTime since = DateTimeParser.parseIfPresent(sinceIso, "since").orElse(null);
         log.info("Paginated alerts requested since {} with page size {}", sinceIso, pageable.getPageSize());
         return ResponseEntity.ok(alertService.getAlerts(since, pageable));
     }
