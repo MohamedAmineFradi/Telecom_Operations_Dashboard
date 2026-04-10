@@ -6,7 +6,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.telecom_operations_dashboard.common.dto.alert.AlertDto;
 import org.telecom_operations_dashboard.common.util.SseBroadcaster;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -34,5 +36,28 @@ public class AlertSseBroadcaster {
 
     public void broadcastCriticalAlert(AlertDto alert) {
         SseBroadcaster.broadcastJson(criticalEmitters, "alerts-critical", alert);
+    }
+
+    public void broadcastCriticalTransition(AlertDto alert, String fromSeverity) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("type", "CRITICAL_TRANSITION");
+        payload.put("fromSeverity", fromSeverity);
+        payload.put("toSeverity", "CRITICAL");
+        payload.put("alert", alert);
+
+        SseBroadcaster.broadcastJson(criticalEmitters, "alerts-critical-transition", payload);
+        SseBroadcaster.broadcastJson(highEmitters, "alerts-critical-transition", payload);
+    }
+
+    public void broadcastResolvedAlert(AlertDto alert) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("type", "RESOLVED");
+        payload.put("id", alert.id());
+        payload.put("cellId", alert.cellId());
+        payload.put("severity", alert.severity());
+        payload.put("timestamp", alert.timestamp());
+
+        SseBroadcaster.broadcastJson(highEmitters, "alerts-resolved", payload);
+        SseBroadcaster.broadcastJson(criticalEmitters, "alerts-resolved", payload);
     }
 }

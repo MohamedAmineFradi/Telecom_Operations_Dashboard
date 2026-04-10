@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface AlertRepository extends JpaRepository<Alert, Long> {
 
@@ -18,5 +19,7 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
 
     Page<Alert> findByTimestampAfterOrderByTimestampDesc(OffsetDateTime since, Pageable pageable);
 
-    boolean existsByCellIdAndTypeAndTimestamp(Integer cellId, String type, OffsetDateTime timestamp);
+    Optional<Alert> findFirstByCellIdAndTypeAndTimestamp(Integer cellId, String type, OffsetDateTime timestamp);
+
+    Page<Alert> findBySeverityIgnoreCaseOrderByTimestampDesc(String severity, Pageable pageable);
 }

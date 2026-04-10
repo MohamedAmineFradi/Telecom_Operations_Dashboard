@@ -15,6 +15,10 @@ public interface AlertService {
 
     Page<AlertDto> getAlerts(@Nullable OffsetDateTime since, Pageable pageable);
 
+    List<AlertDto> getHighAlertsSnapshot(int limit);
+
+    List<AlertDto> getCriticalAlertsSnapshot(int limit);
+
     void resolveAlert(Long id);
 
     void handleCongestionEvent( CongestionEvent event);

@@ -5,12 +5,14 @@ import org.telecom_operations_dashboard.common.exception.ResourceNotFoundExcepti
 import org.telecom_operations_dashboard.alert.mapper.AlertMapper;
 import org.telecom_operations_dashboard.common.dto.alert.AlertDto;
 import org.telecom_operations_dashboard.alert.model.Alert;
+import org.telecom_operations_dashboard.alert.model.AlertSeverity;
 import org.telecom_operations_dashboard.alert.repository.AlertRepository;
 import org.telecom_operations_dashboard.alert.service.AlertService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.telecom_operations_dashboard.alert.client.RestCellInfoClient;
@@ -25,6 +27,7 @@ import java.util.List;
 public class AlertServiceImpl implements AlertService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertServiceImpl.class);
+    private static final String ALERT_TYPE_CONGESTION = "CONGESTION";
 
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
@@ -69,65 +72,117 @@ public class AlertServiceImpl implements AlertService {
     }
 
     @Override
+    public List<AlertDto> getHighAlertsSnapshot(int limit) {
+        return getAlertsSnapshot(AlertSeverity.HIGH, limit);
+    }
+
+    @Override
+    public List<AlertDto> getCriticalAlertsSnapshot(int limit) {
+        return getAlertsSnapshot(AlertSeverity.CRITICAL, limit);
+    }
+
+    private List<AlertDto> getAlertsSnapshot(AlertSeverity severity, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 500));
+        return alertRepository
+                .findBySeverityIgnoreCaseOrderByTimestampDesc(severity.name(), PageRequest.of(0, safeLimit))
+                .stream()
+                .map(alertMapper::toDto)
+                .toList();
+    }
+
+    @Override
     public void resolveAlert(Long id) {
-        if (!alertRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Alert not found: " + id);
-        }
-        alertRepository.deleteById(id);
+        Alert alert = alertRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found: " + id));
+
+        AlertDto alertDto = alertMapper.toDto(alert);
+        alertRepository.delete(alert);
+        alertSseBroadcaster.broadcastResolvedAlert(alertDto);
         log.info("Resolved alert {}", id);
     }
 
     @Override
     public void handleCongestionEvent(org.telecom_operations_dashboard.common.dto.event.CongestionEvent event) {
-        if ("LOW".equals(event.getSeverity())) {
+        AlertSeverity incomingSeverity = AlertSeverity.from(event.getSeverity());
+        if (!incomingSeverity.isStreamable()) {
+            log.debug("Ignoring non-streamable severity '{}' for cell {}", event.getSeverity(), event.getCellId());
             return;
         }
 
-        // Avoid duplicate alerts for the same cell and hour
-        if (alertRepository.existsByCellIdAndTypeAndTimestamp(event.getCellId(), "CONGESTION", event.getHour())) {
-            log.debug("Alert already exists for cell {} at hour {}", event.getCellId(), event.getHour());
+        Alert existing = alertRepository
+                .findFirstByCellIdAndTypeAndTimestamp(event.getCellId(), ALERT_TYPE_CONGESTION, event.getHour())
+                .orElse(null);
+
+        if (existing != null) {
+            AlertSeverity currentSeverity = AlertSeverity.from(existing.getSeverity());
+            if (incomingSeverity.rank() <= currentSeverity.rank()) {
+                log.debug("Alert already exists for cell {} at hour {} with severity {}", event.getCellId(), event.getHour(), currentSeverity);
+                return;
+            }
+
+            existing.setSeverity(incomingSeverity.name());
+            existing.setMessage(buildAlertMessage(event));
+
+            Alert updated = alertRepository.save(existing);
+            AlertDto alertDto = alertMapper.toDto(updated);
+            publishSeverityEvents(alertDto, incomingSeverity, currentSeverity);
+
+            if (incomingSeverity == AlertSeverity.HIGH && currentSeverity.rank() < AlertSeverity.HIGH.rank()) {
+                emailService.sendHighCongestionAlert(
+                        String.valueOf(event.getCellId()),
+                        incomingSeverity.name(),
+                        updated.getMessage()
+                );
+            }
+
             return;
         }
 
         Alert alert = new Alert();
         alert.setCellId(event.getCellId());
-        alert.setType("CONGESTION");
-        alert.setSeverity(event.getSeverity());
+        alert.setType(ALERT_TYPE_CONGESTION);
+        alert.setSeverity(incomingSeverity.name());
         alert.setTimestamp(event.getHour());
+        alert.setMessage(buildAlertMessage(event));
 
-        // Fetch cell details for location info
+        Alert savedAlert = alertRepository.save(alert);
+        log.info("Asynchronous alert generated for cell {} (Severity: {})", event.getCellId(), incomingSeverity.name());
+
+        AlertDto alertDto = alertMapper.toDto(savedAlert);
+        publishSeverityEvents(alertDto, incomingSeverity, null);
+
+        if (incomingSeverity == AlertSeverity.HIGH) {
+            emailService.sendHighCongestionAlert(
+                    String.valueOf(event.getCellId()),
+                    incomingSeverity.name(),
+                    alert.getMessage()
+            );
+        }
+    }
+
+    private void publishSeverityEvents(AlertDto alertDto, AlertSeverity incomingSeverity, @Nullable AlertSeverity previousSeverity) {
+        if (incomingSeverity == AlertSeverity.CRITICAL) {
+            alertSseBroadcaster.broadcastCriticalAlert(alertDto);
+            if (previousSeverity != null && previousSeverity != AlertSeverity.CRITICAL) {
+                alertSseBroadcaster.broadcastCriticalTransition(alertDto, previousSeverity.name());
+            }
+        } else if (incomingSeverity == AlertSeverity.HIGH) {
+            alertSseBroadcaster.broadcastHighAlert(alertDto);
+        }
+    }
+
+    private String buildAlertMessage(org.telecom_operations_dashboard.common.dto.event.CongestionEvent event) {
         CellDetailsDto cellDetails = restCellInfoClient.fetchCellDetails(event.getCellId());
         String locationInfo = "";
         if (cellDetails != null) {
             locationInfo = String.format(
-                " [bounds: %s, centroid: (%.5f, %.5f)]",
-                cellDetails.bounds() != null ? cellDetails.bounds() : "N/A",
-                cellDetails.centroidX() != null ? cellDetails.centroidX() : 0.0,
-                cellDetails.centroidY() != null ? cellDetails.centroidY() : 0.0
+                    " [bounds: %s, centroid: (%.5f, %.5f)]",
+                    cellDetails.bounds() != null ? cellDetails.bounds() : "N/A",
+                    cellDetails.centroidX() != null ? cellDetails.centroidX() : 0.0,
+                    cellDetails.centroidY() != null ? cellDetails.centroidY() : 0.0
             );
         }
 
-        alert.setMessage(
-            "Congestion score " + String.format("%.2f", event.getScore()) + "% at hour " + event.getHour() + locationInfo
-        );
-
-        Alert savedAlert = alertRepository.save(alert);
-        log.info("Asynchronous alert generated for cell {} (Severity: {})", event.getCellId(), event.getSeverity());
-
-        AlertDto alertDto = alertMapper.toDto(savedAlert);
-        if ("CRITICAL".equalsIgnoreCase(event.getSeverity())) {
-            alertSseBroadcaster.broadcastCriticalAlert(alertDto);
-        }
-        if ("HIGH".equalsIgnoreCase(event.getSeverity())) {
-            alertSseBroadcaster.broadcastHighAlert(alertDto);
-        }
-
-        if ("HIGH".equals(event.getSeverity())) {
-            emailService.sendHighCongestionAlert(
-                String.valueOf(event.getCellId()),
-                event.getSeverity(),
-                alert.getMessage()
-            );
-        }
+        return "Congestion score " + String.format("%.2f", event.getScore()) + "% at hour " + event.getHour() + locationInfo;
     }
 }

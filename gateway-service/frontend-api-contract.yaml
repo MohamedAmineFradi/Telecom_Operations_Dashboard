@@ -342,6 +342,29 @@ paths:
               schema:
                 type: string
 
+  /api/alerts/high/snapshot:
+    get:
+      tags: [alerts]
+      summary: High severity alert snapshot
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: List of latest HIGH severity alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertDto'
+
   /api/alerts/critical/stream:
     get:
       tags: [alerts]
@@ -355,6 +378,29 @@ paths:
             text/event-stream:
               schema:
                 type: string
+
+  /api/alerts/critical/snapshot:
+    get:
+      tags: [alerts]
+      summary: Critical severity alert snapshot
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: List of latest CRITICAL severity alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertDto'
 
   /api/alerts/{id}/resolve:
     post:

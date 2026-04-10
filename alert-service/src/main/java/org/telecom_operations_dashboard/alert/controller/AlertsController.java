@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,7 +42,7 @@ public class AlertsController {
     public ResponseEntity<List<AlertDto>> getAlerts(
             @RequestParam(name = "since", required = false) String sinceIso
     ) {
-        OffsetDateTime since = DateTimeParser.parseIfPresent(sinceIso, "since").orElse(null);
+        OffsetDateTime since = sinceIso == null || sinceIso.isBlank() ? null : DateTimeParser.parse(sinceIso, "since");
         log.info("Alerts requested since {}", sinceIso);
         return ResponseEntity.ok(alertService.getAlertsSince(since));
     }
@@ -50,7 +52,7 @@ public class AlertsController {
             @RequestParam(name = "since", required = false) String sinceIso,
             Pageable pageable
     ) {
-        OffsetDateTime since = DateTimeParser.parseIfPresent(sinceIso, "since").orElse(null);
+        OffsetDateTime since = sinceIso == null || sinceIso.isBlank() ? null : DateTimeParser.parse(sinceIso, "since");
         log.info("Paginated alerts requested since {} with page size {}", sinceIso, pageable.getPageSize());
         return ResponseEntity.ok(alertService.getAlerts(since, pageable));
     }
@@ -63,6 +65,20 @@ public class AlertsController {
     @GetMapping(path = "/critical/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamCriticalAlerts() {
         return alertSseBroadcaster.registerCriticalStream();
+    }
+
+    @GetMapping(path = "/high/snapshot", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AlertDto>> getHighAlertsSnapshot(
+            @RequestParam(name = "limit", defaultValue = "50") @Min(1) @Max(500) int limit
+    ) {
+        return ResponseEntity.ok(alertService.getHighAlertsSnapshot(limit));
+    }
+
+    @GetMapping(path = "/critical/snapshot", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AlertDto>> getCriticalAlertsSnapshot(
+            @RequestParam(name = "limit", defaultValue = "50") @Min(1) @Max(500) int limit
+    ) {
+        return ResponseEntity.ok(alertService.getCriticalAlertsSnapshot(limit));
     }
 
     @PostMapping("/{id}/resolve")
