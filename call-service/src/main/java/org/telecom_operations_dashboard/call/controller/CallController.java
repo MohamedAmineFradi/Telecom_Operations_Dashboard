@@ -1,42 +1,27 @@
 package org.telecom_operations_dashboard.call.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.telecom_operations_dashboard.call.service.CallCurrentStateService;
+import org.telecom_operations_dashboard.call.service.impl.CallRawSseBroadcaster;
 import org.telecom_operations_dashboard.common.controller.AbstractSseController;
-import org.telecom_operations_dashboard.call.mapper.CallDtoMapper;
-import org.telecom_operations_dashboard.common.dto.event.CallEvent;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @RestController
 @RequestMapping("/api/call")
 @RequiredArgsConstructor
 public class CallController extends AbstractSseController {
 
-    private final CallDtoMapper callDtoMapper;
-    private final ConcurrentMap<Integer, CallEvent> currentEvents = new ConcurrentHashMap<>();
-
-    @KafkaListener(
-        topics = "${kafka.topics.call:activity.call}",
-        groupId = "${app.kafka.sse.group-id:${spring.application.name:${app.service:service}}-sse-${HOSTNAME:${random.uuid}}}"
-    )
-    public void listenCallEvents(@Payload CallEvent event) {
-        if (event == null || event.cellId() == null) {
-            return;
-        }
-
-        currentEvents.put(event.cellId(), event);
-        broadcastToRawEmitters("call-raw", event);
-    }
+    private final CallCurrentStateService callCurrentStateService;
+    private final CallRawSseBroadcaster callRawSseBroadcaster;
 
     @GetMapping(path = "/raw/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamRawCall() {
-        return createRawEmitter("raw Call");
+        return callRawSseBroadcaster.registerRawStream();
     }
 
     @GetMapping(path = "/current/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -47,9 +32,7 @@ public class CallController extends AbstractSseController {
                 intervalMs,
                 "call-current",
                 "/api/call/current/stream",
-                () -> currentEvents.values().stream()
-                        .map(callDtoMapper::toHourlyCallDto)
-                        .toList()
+                callCurrentStateService::getCurrentCalls
         );
     }
 }

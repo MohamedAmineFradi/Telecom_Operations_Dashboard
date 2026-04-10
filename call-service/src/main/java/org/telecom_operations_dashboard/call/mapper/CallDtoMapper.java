@@ -1,16 +1,13 @@
 package org.telecom_operations_dashboard.call.mapper;
 
-import lombok.RequiredArgsConstructor;
 import org.telecom_operations_dashboard.common.dto.event.CallEvent;
 import org.telecom_operations_dashboard.call.model.HourlyCallView;
 import org.telecom_operations_dashboard.common.dto.call.HourlyCallDto;
+import org.telecom_operations_dashboard.common.util.NormalizationUtils;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class CallDtoMapper {
-
-    private final CallMapper callMapper;
 
     public HourlyCallDto toHourlyCallDto(HourlyCallView row) {
         // Convert Instant to OffsetDateTime using system default zone
@@ -18,8 +15,8 @@ public class CallDtoMapper {
         return new HourlyCallDto(
                 row.getCellId(),
                 hour,
-                callMapper.safe(row.getTotalCallin()),
-                callMapper.safe(row.getTotalCallout())
+                NormalizationUtils.safe(row.getTotalCallin()),
+                NormalizationUtils.safe(row.getTotalCallout())
         );
     }
 
@@ -27,8 +24,8 @@ public class CallDtoMapper {
         return new HourlyCallDto(
                 event.cellId(),
                 event.hour(),
-                callMapper.safe(event.totalCallin()),
-                callMapper.safe(event.totalCallout())
+                NormalizationUtils.safe(event.totalCallin()),
+                NormalizationUtils.safe(event.totalCallout())
         );
     }
 
