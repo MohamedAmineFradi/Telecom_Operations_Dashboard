@@ -87,7 +87,8 @@ jobs:
         env:
           REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "owner_lc=$(echo \"$REPO_OWNER\" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          owner_lc=$(printf '%s' "$REPO_OWNER" | tr -d '"' | tr -d "'" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          echo "owner_lc=$owner_lc" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image per service
         uses: docker/build-push-action@v5
