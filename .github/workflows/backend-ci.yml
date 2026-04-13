@@ -26,8 +26,8 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Build with Maven (compile  + package)
-      run: mvn clean verify  -DskipTests
+    - name: Build with Maven (compile + test + package)
+      run: mvn clean verify
 
     - name: Verify Dockerfiles exist 
       run: |
