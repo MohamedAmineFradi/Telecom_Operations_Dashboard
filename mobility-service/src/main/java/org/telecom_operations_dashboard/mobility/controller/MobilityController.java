@@ -41,8 +41,13 @@ public class MobilityController extends AbstractSseController {
         return mobilityRawSseBroadcaster.registerRawStream();
     }
 
+    @GetMapping(path = "/current/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamCurrentMobility() {
+        return mobilityRawSseBroadcaster.registerRawStream();
+    }
+
     // Cell-scoped flows
-    @GetMapping({"/mobility/cell-flows", "/cell-flows"})
+    @GetMapping("/cell-flows")
     public ResponseEntity<List<MobilityCellProvinceFlowDto>> getMobilityCellFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
             @RequestParam(name = "fromCell", required = false) Integer fromCellId,
@@ -50,6 +55,23 @@ public class MobilityController extends AbstractSseController {
         OffsetDateTime hour = resolveHour(hourIso);
         log.info("Cell flows requested at {} (fromCell={}, limit={})", hourIso, fromCellId, limit);
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeFlowsAtHour(hour, fromCellId, null, limit));
+    }
+
+    @GetMapping(path = "/flows/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamMobilityFlowsAlias(
+            @RequestParam(name = "hour", required = false) String hourIso,
+            @RequestParam(name = "fromCell", required = false) Integer fromCell,
+            @RequestParam(name = "from", required = false) String fromProvince,
+            @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) @Max(300000) long intervalMs,
+            @RequestParam(name = "limit", defaultValue = "20") @Min(1) @Max(100) int limit
+    ) {
+        OffsetDateTime hour = resolveHour(hourIso);
+        return createMobilitySseEmitter(
+                intervalMs,
+                "mobility-flows-update",
+                () -> realtimeMobilityFlows(hour, fromCell, fromProvince, limit),
+                "/api/mobility/flows/stream"
+        );
     }
 
     // Province-scoped flows
@@ -61,6 +83,22 @@ public class MobilityController extends AbstractSseController {
         OffsetDateTime hour = resolveHour(hourIso);
         log.info("Province flows requested at {} (from={}, limit={})", hourIso, fromProvince, limit);
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeFlowsAtHour(hour, null, fromProvince, limit));
+    }
+
+    @GetMapping(path = "/province-flows/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamMobilityProvinceFlowsAlias(
+            @RequestParam(name = "hour", required = false) String hourIso,
+            @RequestParam(name = "from", required = false) String fromProvince,
+            @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) @Max(300000) long intervalMs,
+            @RequestParam(name = "limit", defaultValue = "20") @Min(1) @Max(100) int limit
+    ) {
+        OffsetDateTime hour = resolveHour(hourIso);
+        return createMobilitySseEmitter(
+                intervalMs,
+                "mobility-flows-update",
+                () -> realtimeMobilityFlows(hour, null, fromProvince, limit),
+                "/api/mobility/province-flows/stream"
+        );
     }
 
         @GetMapping("/province-summary")
@@ -79,40 +117,36 @@ public class MobilityController extends AbstractSseController {
         return ResponseEntity.ok(mobilityRealtimeQueryService.getRealtimeNetworkStats());
     }
 
-    @GetMapping(
-            path = {
-                "/mobility/stream",
-                "/mobility/current/stream",
-                "/mobility/flows/stream",
-                "/mobility/cell-flows/stream",
-                "/mobility/province-flows/stream",
-                "/mobility/province-summary/stream"
-            },
-            produces = MediaType.TEXT_EVENT_STREAM_VALUE
-    )
-    public SseEmitter streamCurrentMobility(
+        @GetMapping(path = "/cell-flows/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        public SseEmitter streamMobilityCellFlows(
             @RequestParam(name = "hour", required = false) String hourIso,
-            @RequestParam(name = "view", defaultValue = "flows") String view,
             @RequestParam(name = "fromCell", required = false) Integer fromCell,
             @RequestParam(name = "from", required = false) String fromProvince,
-            @RequestParam(name = "provincia", required = false) String provincia,
             @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) @Max(300000) long intervalMs,
             @RequestParam(name = "limit", defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
         OffsetDateTime hour = resolveHour(hourIso);
-        boolean summaryView = "summary".equalsIgnoreCase(view) || "province-summary".equalsIgnoreCase(view);
-        String endpoint = summaryView ? "/api/mobility/mobility/province-summary/stream" : "/api/mobility/mobility/stream";
-        String eventName = summaryView ? "mobility-province-summary-update" : "mobility-flows-update";
-
-        String provinceFilter = summaryView ? provincia : fromProvince != null ? fromProvince : provincia;
-
         return createMobilitySseEmitter(
                 intervalMs,
-                eventName,
-                () -> summaryView
-                        ? realtimeProvinceSummaries(hour, provinceFilter, limit)
-                        : realtimeMobilityFlows(hour, fromCell, provinceFilter, limit),
-                endpoint
+            "mobility-flows-update",
+            () -> realtimeMobilityFlows(hour, fromCell, fromProvince, limit),
+            "/api/mobility/cell-flows/stream"
+        );
+        }
+
+        @GetMapping(path = "/province-summary/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        public SseEmitter streamMobilityProvinceSummary(
+            @RequestParam(name = "hour", required = false) String hourIso,
+            @RequestParam(name = "provincia", required = false) String provincia,
+            @RequestParam(name = "intervalMs", defaultValue = "5000") @Min(1000) @Max(300000) long intervalMs,
+            @RequestParam(name = "limit", defaultValue = "20") @Min(1) @Max(100) int limit
+        ) {
+        OffsetDateTime hour = resolveHour(hourIso);
+        return createMobilitySseEmitter(
+            intervalMs,
+            "mobility-province-summary-update",
+            () -> realtimeProvinceSummaries(hour, provincia, limit),
+            "/api/mobility/province-summary/stream"
         );
     }
 
