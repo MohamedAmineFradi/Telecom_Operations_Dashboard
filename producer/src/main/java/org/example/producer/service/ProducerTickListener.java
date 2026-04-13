@@ -18,11 +18,14 @@ public class ProducerTickListener {
 
     private final List<AbstractReplayProducer<?>> producers;
     private final SimulationClockSseBroadcaster simulationClockSseBroadcaster;
+    private final TimeAuthorityService timeAuthorityService;
 
     public ProducerTickListener(List<AbstractReplayProducer<?>> producers,
-            SimulationClockSseBroadcaster simulationClockSseBroadcaster) {
+            SimulationClockSseBroadcaster simulationClockSseBroadcaster,
+            TimeAuthorityService timeAuthorityService) {
         this.producers = producers != null ? producers : List.of();
         this.simulationClockSseBroadcaster = simulationClockSseBroadcaster;
+        this.timeAuthorityService = timeAuthorityService;
     }
 
     @jakarta.annotation.PostConstruct
@@ -33,6 +36,7 @@ public class ProducerTickListener {
     @KafkaListener(topics = "simulation.clock", groupId = "producer-clock-group")
     public void onTick(SimulationTickEvent event) {
         log.debug("Received simulation tick: {}", event.getTimestamp());
+        timeAuthorityService.updateFromSimulationTick(event);
         simulationClockSseBroadcaster.broadcast(event);
         for (AbstractReplayProducer<?> producer : producers) {
             try {

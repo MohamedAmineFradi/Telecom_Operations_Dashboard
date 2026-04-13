@@ -21,8 +21,28 @@ tags:
   - name: provinces
   - name: mobility
   - name: simulation-clock
+  - name: time
 
 paths:
+  /api/time:
+    get:
+      tags: [time]
+      summary: Authoritative backend time
+      responses:
+        "200":
+          description: Current authoritative time (simulation clock when available)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    format: date-time
+                  source:
+                    type: string
+                    example: simulation-clock
+
   /api/simulation-clock/stream:
     get:
       tags: [simulation-clock]
@@ -50,7 +70,7 @@ paths:
   /api/traffic/current/stream:
     get:
       tags: [traffic]
-      summary: Traffic heatmap SSE stream
+      summary: Current traffic SSE stream
       parameters:
         - $ref: '#/components/parameters/IntervalMs'
       responses:
@@ -509,7 +529,19 @@ paths:
               schema:
                 type: string
 
-  /api/mobility/mobility/cell-flows:
+  /api/mobility/current/stream:
+    get:
+      tags: [mobility]
+      summary: Alias for raw mobility SSE stream
+      responses:
+        "200":
+          description: text/event-stream of MobilityEvent
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mobility/cell-flows:
     get:
       tags: [mobility]
       summary: Cell flow query
@@ -587,18 +619,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/NetworkStatsDto'
 
-  /api/mobility/mobility/stream:
+  /api/mobility/cell-flows/stream:
     get:
       tags: [mobility]
-      summary: Unified mobility SSE stream
+      summary: Mobility cell flows SSE stream
       parameters:
         - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
         - name: fromCell
           in: query
           required: false
@@ -625,24 +651,18 @@ paths:
             default: 20
       responses:
         "200":
-          description: text/event-stream of mobility flows or province summaries
+          description: text/event-stream of mobility cell flows
           content:
             text/event-stream:
               schema:
                 type: string
 
-  /api/mobility/mobility/current/stream:
+  /api/mobility/flows/stream:
     get:
       tags: [mobility]
-      summary: Alias of unified mobility SSE stream
+      summary: Alias for mobility cell flows SSE stream
       parameters:
         - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
         - name: fromCell
           in: query
           required: false
@@ -669,35 +689,19 @@ paths:
             default: 20
       responses:
         "200":
-          description: text/event-stream of mobility flows or province summaries
+          description: text/event-stream of mobility cell flows
           content:
             text/event-stream:
               schema:
                 type: string
 
-  /api/mobility/mobility/flows/stream:
+  /api/mobility/province-flows/stream:
     get:
       tags: [mobility]
-      summary: Alias of unified mobility SSE stream
+      summary: Alias for mobility province flows SSE stream
       parameters:
         - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
-        - name: fromCell
-          in: query
-          required: false
-          schema:
-            type: integer
         - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: provincia
           in: query
           required: false
           schema:
@@ -713,34 +717,18 @@ paths:
             default: 20
       responses:
         "200":
-          description: text/event-stream of mobility flows or province summaries
+          description: text/event-stream of mobility province flows
           content:
             text/event-stream:
               schema:
                 type: string
 
-  /api/mobility/mobility/cell-flows/stream:
+  /api/mobility/province-summary/stream:
     get:
       tags: [mobility]
-      summary: Alias of unified mobility SSE stream
+      summary: Mobility province summary SSE stream
       parameters:
         - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
-        - name: fromCell
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
         - name: provincia
           in: query
           required: false
@@ -757,95 +745,7 @@ paths:
             default: 20
       responses:
         "200":
-          description: text/event-stream of mobility flows or province summaries
-          content:
-            text/event-stream:
-              schema:
-                type: string
-
-  /api/mobility/mobility/province-flows/stream:
-    get:
-      tags: [mobility]
-      summary: Alias of unified mobility SSE stream
-      parameters:
-        - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
-        - name: fromCell
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: provincia
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/IntervalMs'
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-      responses:
-        "200":
-          description: text/event-stream of mobility flows or province summaries
-          content:
-            text/event-stream:
-              schema:
-                type: string
-
-  /api/mobility/mobility/province-summary/stream:
-    get:
-      tags: [mobility]
-      summary: Alias of unified mobility SSE stream
-      parameters:
-        - $ref: '#/components/parameters/HourIso'
-        - name: view
-          in: query
-          required: false
-          schema:
-            type: string
-            default: flows
-        - name: fromCell
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: from
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: provincia
-          in: query
-          required: false
-          schema:
-            type: string
-        - $ref: '#/components/parameters/IntervalMs'
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-      responses:
-        "200":
-          description: text/event-stream of mobility flows or province summaries
+          description: text/event-stream of mobility province summaries
           content:
             text/event-stream:
               schema:

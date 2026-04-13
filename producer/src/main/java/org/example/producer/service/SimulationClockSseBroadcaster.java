@@ -16,11 +16,28 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimulationClockSseBroadcaster {
 
     private static final Logger log = LoggerFactory.getLogger(SimulationClockSseBroadcaster.class);
+    private static final int MAX_SSE_CLIENTS = 200;
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final TimeAuthorityService timeAuthorityService;
+
+    public SimulationClockSseBroadcaster(TimeAuthorityService timeAuthorityService) {
+        this.timeAuthorityService = timeAuthorityService;
+    }
 
     public SseEmitter registerStream() {
         SseEmitter emitter = new SseEmitter(0L);
+
+        while (emitters.size() >= MAX_SSE_CLIENTS) {
+            SseEmitter dropped = emitters.get(0);
+            emitters.remove(dropped);
+            try {
+                dropped.complete();
+            } catch (Exception ignored) {
+                // no-op
+            }
+        }
+
         emitters.add(emitter);
 
         Runnable cleanup = () -> emitters.remove(emitter);
@@ -32,6 +49,14 @@ public class SimulationClockSseBroadcaster {
             emitter.send(SseEmitter.event()
                     .name("simulation-clock-connected")
                     .data("connected", MediaType.TEXT_PLAIN));
+
+            SimulationTickEvent replay = timeAuthorityService.getLatestSimulationTick();
+            if (replay != null) {
+                emitter.send(SseEmitter.event()
+                        .name("simulation-clock")
+                        .data(replay, MediaType.APPLICATION_JSON)
+                        .id(String.valueOf(System.currentTimeMillis())));
+            }
         } catch (IOException | IllegalStateException ex) {
             cleanup.run();
         }
@@ -40,7 +65,11 @@ public class SimulationClockSseBroadcaster {
     }
 
     public void broadcast(SimulationTickEvent tick) {
-        if (tick == null || emitters.isEmpty()) {
+        if (tick == null) {
+            return;
+        }
+
+        if (emitters.isEmpty()) {
             return;
         }
 

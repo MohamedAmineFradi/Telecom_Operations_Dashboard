@@ -67,6 +67,10 @@ spring:
           uri: lb://PRODUCER
           predicates:
             - Path=/api/simulation-clock/**
+        - id: producer-time-service
+          uri: lb://PRODUCER
+          predicates:
+            - Path=/api/time/**
 
 eureka:
   client:
