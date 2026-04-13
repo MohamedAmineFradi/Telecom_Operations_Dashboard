@@ -42,5 +42,4 @@ jobs:
     # construire une image de test (par exemple pour le gateway)
     - name: Build test image for gateway
       run: |
-        cd gateway-service
-        docker build -t telecom-gateway-test .
+        docker build -t telecom-gateway-test -f gateway-service/Dockerfile .
