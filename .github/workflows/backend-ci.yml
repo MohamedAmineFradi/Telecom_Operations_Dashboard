@@ -111,7 +111,6 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     needs: test-modules
-    if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_PROJECT_KEY != '' && secrets.SONAR_ORGANIZATION != '' }}
 
     steps:
     - uses: actions/checkout@v4
@@ -131,7 +130,12 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
+    - name: Skip SonarCloud (missing secrets)
+      if: ${{ secrets.SONAR_TOKEN == '' || secrets.SONAR_PROJECT_KEY == '' || secrets.SONAR_ORGANIZATION == '' }}
+      run: echo "Skipping SonarCloud: SONAR_TOKEN/SONAR_PROJECT_KEY/SONAR_ORGANIZATION not fully configured"
+
     - name: SonarCloud analysis
+      if: ${{ secrets.SONAR_TOKEN != '' && secrets.SONAR_PROJECT_KEY != '' && secrets.SONAR_ORGANIZATION != '' }}
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
