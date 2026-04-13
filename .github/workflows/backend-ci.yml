@@ -82,6 +82,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute GHCR image owner (lowercase)
+        id: image_meta
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "owner_lc=$(echo \"$REPO_OWNER\" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image per service
         uses: docker/build-push-action@v5
         with:
@@ -89,8 +96,8 @@ jobs:
           file: ${{ matrix.service }}/Dockerfile
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/telecom-${{ matrix.service }}:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/telecom-${{ matrix.service }}:latest
+            ghcr.io/${{ steps.image_meta.outputs.owner_lc }}/telecom-${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ steps.image_meta.outputs.owner_lc }}/telecom-${{ matrix.service }}:latest
           cache-from: type=gha,scope=telecom-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=telecom-${{ matrix.service }}
 
@@ -121,7 +128,17 @@ jobs:
             exit 0
           fi
 
+          set +e
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
             -Dsonar.organization="$SONAR_ORGANIZATION" \
-            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.host.url=https://sonarcloud.io | tee sonar.log
+          sonar_status=${PIPESTATUS[0]}
+          set -e
+
+          if grep -q "You are running CI analysis while Automatic Analysis is enabled" sonar.log; then
+            echo "SonarCloud Automatic Analysis is enabled for this project. Skipping CI scanner result to avoid duplicate analysis conflict."
+            exit 0
+          fi
+
+          exit $sonar_status
