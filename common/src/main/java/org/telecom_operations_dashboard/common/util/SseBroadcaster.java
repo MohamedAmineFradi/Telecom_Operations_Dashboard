@@ -15,6 +15,7 @@ import java.util.List;
 public class SseBroadcaster {
 
     private static final Logger log = LoggerFactory.getLogger(SseBroadcaster.class);
+    private static final int DEFAULT_MAX_EMITTERS = 250;
 
     /**
      * Broadcasts data to all emitters in the collection.
@@ -63,7 +64,23 @@ public class SseBroadcaster {
     }
 
     public static SseEmitter registerEmitter(List<SseEmitter> emitters, String connectionEventName) {
+        return registerEmitter(emitters, connectionEventName, DEFAULT_MAX_EMITTERS);
+    }
+
+    public static SseEmitter registerEmitter(List<SseEmitter> emitters, String connectionEventName, int maxEmitters) {
         SseEmitter emitter = new SseEmitter(0L);
+
+        int safeMaxEmitters = Math.max(1, maxEmitters);
+        while (emitters.size() >= safeMaxEmitters) {
+            SseEmitter dropped = emitters.get(0);
+            emitters.remove(dropped);
+            try {
+                dropped.complete();
+            } catch (Exception ignored) {
+                // no-op
+            }
+        }
+
         emitters.add(emitter);
 
         Runnable cleanup = () -> emitters.remove(emitter);
@@ -80,6 +97,25 @@ public class SseBroadcaster {
         }
 
         return emitter;
+    }
+
+    public static <T> boolean sendJsonToEmitter(SseEmitter emitter, String eventName, T data) {
+        if (emitter == null || data == null) {
+            return false;
+        }
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(eventName)
+                    .data(data, MediaType.APPLICATION_JSON)
+                    .id(String.valueOf(System.currentTimeMillis())));
+            return true;
+        } catch (IOException | IllegalStateException ex) {
+            return false;
+        } catch (Exception ex) {
+            log.warn("Failed to send replay SSE event: {}", ex.getMessage());
+            return false;
+        }
     }
 
     /**
