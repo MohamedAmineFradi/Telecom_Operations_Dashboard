@@ -13,7 +13,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(properties = {
     "eureka.client.enabled=false",
     "spring.cloud.discovery.enabled=false",
-    "spring.kafka.bootstrap-servers=localhost:9092"
+    "spring.kafka.bootstrap-servers=localhost:9092",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.sql.init.mode=never"
 })
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
@@ -24,7 +26,8 @@ public abstract class AbstractIntegrationTest {
     )
         .withDatabaseName("telecom_test")
         .withUsername("test")
-        .withPassword("test");
+        .withPassword("test")
+        .withInitScript("postgis-init.sql");
 
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
