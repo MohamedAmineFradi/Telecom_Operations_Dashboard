@@ -1,0 +1,91 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Code-Quality.gitlab-ci.yml
+
+stages:
+  - test
+  - package
+  - container
+
+default:
+  image: maven:3.9.9-eclipse-temurin-21
+  cache:
+    key: "$CI_PROJECT_ID-maven"
+    paths:
+      - .m2/repository
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+test-modules:
+  stage: test
+  parallel:
+    matrix:
+      - MODULE: "common"
+      - MODULE: "alert-service"
+      - MODULE: "call-service"
+      - MODULE: "cell-service"
+      - MODULE: "gateway-service"
+      - MODULE: "internet-service"
+      - MODULE: "mobility-service"
+      - MODULE: "producer"
+      - MODULE: "sms-service"
+      - MODULE: "traffic-service"
+  script:
+    - mvn -B -pl "$MODULE" -am test
+
+package-services:
+  stage: package
+  parallel:
+    matrix:
+      - SERVICE: "alert-service"
+      - SERVICE: "call-service"
+      - SERVICE: "cell-service"
+      - SERVICE: "gateway-service"
+      - SERVICE: "internet-service"
+      - SERVICE: "mobility-service"
+      - SERVICE: "producer"
+      - SERVICE: "sms-service"
+      - SERVICE: "traffic-service"
+  script:
+    - mvn -B -pl "$SERVICE" -am -DskipTests clean package
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - "$SERVICE/target/*.jar"
+
+build-and-push-images:
+  stage: container
+  image: docker:27.4.1
+  services:
+    - name: docker:27.4.1-dind
+      command: ["--mtu=1460"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+  parallel:
+    matrix:
+      - SERVICE: "alert-service"
+      - SERVICE: "call-service"
+      - SERVICE: "cell-service"
+      - SERVICE: "gateway-service"
+      - SERVICE: "internet-service"
+      - SERVICE: "mobility-service"
+      - SERVICE: "producer"
+      - SERVICE: "sms-service"
+      - SERVICE: "traffic-service"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - IMAGE_NAME="$CI_REGISTRY_IMAGE/telecom-$SERVICE"
+    - docker build -f "$SERVICE/Dockerfile" -t "$IMAGE_NAME:$CI_COMMIT_SHA" -t "$IMAGE_NAME:latest" .
+    - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
+    - docker push "$IMAGE_NAME:latest"
