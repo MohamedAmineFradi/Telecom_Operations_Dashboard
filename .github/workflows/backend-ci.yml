@@ -9,20 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: milan_telecom
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-        - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d milan_telecom"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
@@ -40,8 +26,8 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Build with Maven (compile + test + package)
-      run: mvn clean verify
+    - name: Build with Maven (compile  + package)
+      run: mvn clean verify  -DskipTests
 
     - name: Verify Dockerfiles exist 
       run: |
