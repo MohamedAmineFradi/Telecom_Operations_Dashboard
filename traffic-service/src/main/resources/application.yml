@@ -18,7 +18,7 @@ spring:
   application:
     name: TRAFFIC-SERVICE
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     streams:
       application-id: ${SPRING_KAFKA_STREAMS_APPLICATION_ID:traffic-service-streams}
       properties:
@@ -45,7 +45,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,metrics,prometheus
   endpoint:
     health:
       show-details: always

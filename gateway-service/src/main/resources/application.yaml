@@ -72,6 +72,13 @@ spring:
           predicates:
             - Path=/api/time/**
 
+keycloak:
+  auth-server-url: ${KEYCLOAK_URL}
+  realm: ${KEYCLOAK_REALM}
+  resource: ${KEYCLOAK_CLIENT_ID}
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+
 eureka:
   client:
     service-url:
@@ -85,7 +92,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,metrics,prometheus
   endpoint:
     health:
       show-details: always
