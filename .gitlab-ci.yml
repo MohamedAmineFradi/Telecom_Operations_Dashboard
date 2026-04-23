@@ -12,6 +12,7 @@ stages:
   - test
   - package
   - container
+  - deploy                    # déploiement stage ajouté après la construction des images
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
@@ -91,3 +92,26 @@ build-and-push-images:
     - docker build -f "$SERVICE/Dockerfile" -t "$IMAGE_NAME:$CI_COMMIT_SHA" -t "$IMAGE_NAME:latest" .
     - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
     - docker push "$IMAGE_NAME:latest"
+
+# ----------  DÉPLOIEMENT ----------
+deploy-to-vm:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - apk add --no-cache openssh sshpass
+    - mkdir -p ~/.ssh
+    - echo "$AZURE_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $AZURE_VM_APPS_IP >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh -o StrictHostKeyChecking=no azureuser@$AZURE_VM_APPS_IP "
+        cd ~/telecom-apps
+        docker-compose pull
+        docker-compose up -d --remove-orphans
+        docker image prune -f
+        sleep 15
+        curl -f http://localhost:8090/actuator/health || exit 1
+      "
