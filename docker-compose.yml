@@ -8,7 +8,7 @@ services:
       - kafka-net
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: TRAFFIC-SERVICE
       APP_STREAMING_ENABLED: "true"
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
@@ -45,7 +45,7 @@ services:
       - kafka-net
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: SMS-SERVICE
       APP_STREAMING_ENABLED: "true"
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
@@ -70,7 +70,7 @@ services:
       - kafka-net
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: CALL-SERVICE
       APP_STREAMING_ENABLED: "true"
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
@@ -95,7 +95,7 @@ services:
       - kafka-net
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: INTERNET-SERVICE
       APP_STREAMING_ENABLED: "true"
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
@@ -123,7 +123,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: ALERT-SERVICE
       APP_STREAMING_ENABLED: "false"
       CELL_SERVICE_BASE_URL: http://cell-service:8102
@@ -157,7 +157,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: CELL-SERVICE
       APP_STREAMING_ENABLED: "false"
     depends_on:
@@ -182,7 +182,7 @@ services:
       - kafka-net
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: MOBILITY-SERVICE
       APP_STREAMING_ENABLED: "true"
       SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
