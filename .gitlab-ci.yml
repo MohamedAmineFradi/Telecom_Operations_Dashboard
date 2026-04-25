@@ -121,21 +121,39 @@ deploy-to-vm:
   script:
     - |
       ssh azureuser@$AZURE_VM_APPS_IP "
+        set -e
         cd ~/telecom-apps
+
+        # Detect Compose command depending on Docker installation (v2 plugin or v1 binary)
+        if sudo docker compose version >/dev/null 2>&1; then
+          COMPOSE_CMD='sudo docker compose'
+        elif command -v docker-compose >/dev/null 2>&1; then
+          COMPOSE_CMD='sudo docker-compose'
+        else
+          echo 'ERROR: neither docker compose nor docker-compose is available on VM'
+          exit 1
+        fi
         
         # 1. Login Docker Registry pour tirer les nouvelles images privées
         echo \"$CI_REGISTRY_PASSWORD\" | sudo docker login $CI_REGISTRY -u \"$CI_REGISTRY_USER\" --password-stdin
         
         # 2. Tirer les nouvelles images (seuls les services Java changent)
-        sudo docker compose pull
+        \$COMPOSE_CMD pull
         
         # 3. Redémarrer les services mis à jour
-        sudo docker compose up -d --remove-orphans
+        \$COMPOSE_CMD up -d --remove-orphans
         
         # 4. Nettoyage des anciennes images
         sudo docker image prune -f
         
-        # 5. Health Check simple
-        sleep 20
-        curl -f http://localhost:8090/actuator/health || exit 1
+        # 5. Health Check avec retries (jusqu'a 2 minutes)
+        for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+          if curl -fsS http://localhost:8090/actuator/health >/dev/null; then
+            exit 0
+          fi
+          echo "Healthcheck not ready yet (attempt \$i/12), retrying in 10s..."
+          sleep 10
+        done
+        echo 'ERROR: gateway healthcheck failed after retries'
+        exit 1
       "
