@@ -12,7 +12,6 @@ stages:
   - test
   - package
   - container
-  - deploy                    # déploiement stage ajouté après la construction des images
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
