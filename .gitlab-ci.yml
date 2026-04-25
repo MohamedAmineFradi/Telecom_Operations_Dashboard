@@ -122,38 +122,56 @@ deploy-to-vm:
     - |
       ssh azureuser@$AZURE_VM_APPS_IP "
         set -e
+        echo '[deploy] Connected to VM'
         cd ~/telecom-apps
+        echo '[deploy] Working directory: ~/telecom-apps'
 
         # Detect Compose command depending on Docker installation (v2 plugin or v1 binary)
         if sudo docker compose version >/dev/null 2>&1; then
           COMPOSE_CMD='sudo docker compose'
+          echo '[deploy] Using docker compose (v2 plugin)'
         elif command -v docker-compose >/dev/null 2>&1; then
           COMPOSE_CMD='sudo docker-compose'
+          echo '[deploy] Using docker-compose (v1 binary)'
         else
           echo 'ERROR: neither docker compose nor docker-compose is available on VM'
           exit 1
         fi
         
         # 1. Login Docker Registry pour tirer les nouvelles images privées
+        echo '[deploy] Docker registry login...'
         echo \"$CI_REGISTRY_PASSWORD\" | sudo docker login $CI_REGISTRY -u \"$CI_REGISTRY_USER\" --password-stdin
+        echo '[deploy] Docker registry login done'
         
         # 2. Tirer les nouvelles images (seuls les services Java changent)
+        echo '[deploy] Pulling images...'
         \$COMPOSE_CMD pull
+        echo '[deploy] Pull done'
         
         # 3. Redémarrer les services mis à jour
+        echo '[deploy] Recreating containers...'
         \$COMPOSE_CMD up -d --remove-orphans
+        echo '[deploy] Containers recreated'
+        \$COMPOSE_CMD ps || true
         
         # 4. Nettoyage des anciennes images
+        echo '[deploy] Pruning old images...'
         sudo docker image prune -f
+        echo '[deploy] Prune done'
         
         # 5. Health Check avec retries (jusqu'a 2 minutes)
+        echo '[deploy] Running healthcheck retries on http://localhost:8090/actuator/health'
         for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
           if curl -fsS http://localhost:8090/actuator/health >/dev/null; then
+            echo '[deploy] Healthcheck passed'
             exit 0
           fi
-          echo "Healthcheck not ready yet (attempt \$i/12), retrying in 10s..."
+          echo \"Healthcheck not ready yet (attempt \$i/12), retrying in 10s...\"
           sleep 10
         done
         echo 'ERROR: gateway healthcheck failed after retries'
+        \$COMPOSE_CMD ps || true
+        \$COMPOSE_CMD logs --tail=120 gateway-service || true
+        sudo docker ps -a || true
         exit 1
       "
