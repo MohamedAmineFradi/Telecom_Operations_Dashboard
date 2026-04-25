@@ -12,6 +12,7 @@ stages:
   - test
   - package
   - container
+  - deploy                    # déploiement stage ajouté après la construction des images
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
@@ -101,3 +102,40 @@ build-and-push-images:
     - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
     - docker push "$IMAGE_NAME:latest"
 
+
+
+# --- ÉTAPE 4: DÉPLOIEMENT SUR AZURE VM ---
+deploy-to-vm:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs:
+    - build-and-push-images
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$AZURE_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $AZURE_VM_APPS_IP >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh azureuser@$AZURE_VM_APPS_IP "
+        cd ~/telecom-apps
+        
+        # 1. Login Docker Registry pour tirer les nouvelles images privées
+        echo \"$CI_REGISTRY_PASSWORD\" | sudo docker login $CI_REGISTRY -u \"$CI_REGISTRY_USER\" --password-stdin
+        
+        # 2. Tirer les nouvelles images (seuls les services Java changent)
+        sudo docker compose pull
+        
+        # 3. Redémarrer les services mis à jour
+        sudo docker compose up -d --remove-orphans
+        
+        # 4. Nettoyage des anciennes images
+        sudo docker image prune -f
+        
+        # 5. Health Check simple
+        sleep 20
+        curl -f http://localhost:8090/actuator/health || exit 1
+      "
