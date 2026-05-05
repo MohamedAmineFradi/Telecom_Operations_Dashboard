@@ -122,7 +122,7 @@ services:
       DB_NAME: ${DB_NAME:-milan_telecom}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-disable}
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-enable}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
       SPRING_APPLICATION_NAME: ALERT-SERVICE
