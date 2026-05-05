@@ -48,8 +48,8 @@ services:
       DB_HOST: ${DB_HOST:-localhost}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-disable}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
@@ -120,8 +120,8 @@ services:
       DB_HOST: ${DB_HOST:-localhost}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-enable}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
@@ -154,8 +154,8 @@ services:
       DB_HOST: ${DB_HOST:-localhost}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-disable}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
@@ -214,8 +214,8 @@ services:
       DB_HOST: ${DB_HOST:-localhost}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USER: ${DB_USERNAME:-postgres}
-      DB_PASS: ${DB_PASSWORD:-postgres}
+      DB_USER: ${DB_USERNAME }
+      DB_PASS: ${DB_PASSWORD }
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-disable}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       PRODUCER_POLL_INTERVAL_MS: ${PRODUCER_POLL_INTERVAL_MS:-900000}
