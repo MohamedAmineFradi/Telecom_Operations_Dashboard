@@ -105,7 +105,7 @@ build-and-push-images:
     # Adaptation du nom d'image pour correspondre à notre structure GitLab
     - IMAGE_NAME="$CI_REGISTRY_IMAGE/$SERVICE" 
     - JAR_PATH=$(ls "$SERVICE"/target/*.jar 2>/dev/null | head -n 1)
-    - test -n "$JAR_PATH" || (echo "ERROR: no JAR artifact found for $SERVICE in $SERVICE/target" && exit 1)
+    - 'test -n "$JAR_PATH" || (echo "ERROR: no JAR artifact found for $SERVICE in $SERVICE/target" && exit 1)'
     - docker build -f "$SERVICE/Dockerfile" -t "$IMAGE_NAME:$CI_COMMIT_SHA" -t "$IMAGE_NAME:latest" .
     - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
     - docker push "$IMAGE_NAME:latest"
