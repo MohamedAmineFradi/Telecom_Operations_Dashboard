@@ -32,8 +32,6 @@ default:
 # --- ÉTAPE 1: TESTS UNITAIRES ---
 test-modules:
   stage: test
-  tags:
-    - ubuntuOs
   parallel:
     matrix:
       - MODULE: "common"
@@ -52,8 +50,6 @@ test-modules:
 # --- ÉTAPE 2: PACKAGING JAR ---
 package-services:
   stage: package
-  tags:
-    - ubuntuOs 
   parallel:
     matrix:
       - SERVICE: "alert-service"
@@ -76,8 +72,6 @@ package-services:
 # --- ÉTAPE 3: BUILD & PUSH DOCKER IMAGES ---
 build-and-push-images:
   stage: container
-  tags:
-    - ubuntuOs  
 
   image: docker:27.4.1
   services:
@@ -114,8 +108,6 @@ build-and-push-images:
 # --- ÉTAPE 4: DÉPLOIEMENT SUR AZURE VM ---
 deploy-to-vm:
   stage: deploy
-  tags:
-    - ubuntuOs 
   image: alpine:latest
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
