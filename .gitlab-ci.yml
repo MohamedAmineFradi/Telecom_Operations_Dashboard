@@ -96,7 +96,7 @@ build-and-push-images:
     - job: package-services
       parallel:
         matrix:
-          - SERVICE: ['$SERVICE']
+          - SERVICE: ['$[[ matrix.SERVICE ]]']
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   before_script:
