@@ -73,14 +73,11 @@ package-services:
 build-and-push-images:
   stage: container
 
-  image: docker:27.4.1
-  services:
-    - name: docker:27.4.1-dind
-      command: ["--mtu=1460"]
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
+    DOCKER_CONFIG: /kaniko/.docker
   parallel:
     matrix:
       - SERVICE: "alert-service"
@@ -100,15 +97,24 @@ build-and-push-images:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - mkdir -p /kaniko/.docker
+    - |
+      cat > /kaniko/.docker/config.json <<EOF
+      {
+        "auths": {
+          "$CI_REGISTRY": {
+            "username": "$CI_REGISTRY_USER",
+            "password": "$CI_REGISTRY_PASSWORD"
+          }
+        }
+      }
+      EOF
   script:
     # Adaptation du nom d'image pour correspondre à notre structure GitLab
     - IMAGE_NAME="$CI_REGISTRY_IMAGE/$SERVICE" 
     - JAR_PATH=$(ls "$SERVICE"/target/*.jar 2>/dev/null | head -n 1)
     - 'test -n "$JAR_PATH" || (echo "ERROR: no JAR artifact found for $SERVICE in $SERVICE/target" && exit 1)'
-    - docker build -f "$SERVICE/Dockerfile" -t "$IMAGE_NAME:$CI_COMMIT_SHA" -t "$IMAGE_NAME:latest" .
-    - docker push "$IMAGE_NAME:$CI_COMMIT_SHA"
-    - docker push "$IMAGE_NAME:latest"
+    - /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$SERVICE/Dockerfile" --destination "$IMAGE_NAME:$CI_COMMIT_SHA" --destination "$IMAGE_NAME:latest"
 
 
 
