@@ -4,10 +4,6 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 
-include:
-  - template: Jobs/SAST.gitlab-ci.yml
-  - template: Jobs/Code-Quality.gitlab-ci.yml
-
 stages:
   - test
   - package
@@ -21,6 +17,13 @@ variables:
   # AZURE_SSH_PRIVATE_KEY
   # CI_REGISTRY_USER
   # CI_REGISTRY_PASSWORD
+  # SONAR_TOKEN
+  # SONAR_HOST_URL
+
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+  GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+
+
 
 default:
   image: maven:3.9.9-eclipse-temurin-21
@@ -32,20 +35,19 @@ default:
 # --- ÉTAPE 1: TESTS UNITAIRES ---
 test-modules:
   stage: test
-  parallel:
-    matrix:
-      - MODULE: "common"
-      - MODULE: "alert-service"
-      - MODULE: "call-service"
-      - MODULE: "cell-service"
-      - MODULE: "gateway-service"
-      - MODULE: "internet-service"
-      - MODULE: "mobility-service"
-      - MODULE: "producer"
-      - MODULE: "sms-service"
-      - MODULE: "traffic-service"
   script:
-    - mvn -B -pl "$MODULE" -am test
+    - mvn -B test
+
+sonarcloud-check:
+  stage: test
+  needs:
+    - test-modules
+  cache:
+    key: sonar-cache
+    paths:
+      - .sonar/cache
+  script:
+    - mvn -B -DskipTests sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN"
 
 # --- ÉTAPE 2: PACKAGING JAR ---
 package-services:
@@ -127,50 +129,61 @@ deploy-to-vm:
   needs:
     - build-and-push-images
   before_script:
-    - apk add --no-cache openssh-client
+    - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh
     - echo "$AZURE_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H $AZURE_VM_APPS_IP >> ~/.ssh/known_hosts
   script:
     - |
-      ssh azureuser@$AZURE_VM_APPS_IP "
-        set -e
-        echo '[deploy] Connected to VM'
-        cd ~/telecom-apps
-        echo '[deploy] Working directory: ~/telecom-apps'
+      REMOTE_USER=azureuser
+      REMOTE_HOST="$REMOTE_USER@$AZURE_VM_APPS_IP"
+      REMOTE_DIR="/home/$REMOTE_USER/telecom-apps"
 
-        # Detect Compose command depending on Docker installation (v2 plugin or v1 binary)
-        if sudo docker compose version >/dev/null 2>&1; then
-          COMPOSE_CMD='sudo docker compose'
+      echo '[deploy] Ensuring remote directory ownership'
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$REMOTE_HOST" "sudo mkdir -p $REMOTE_DIR && sudo chown -R $REMOTE_USER:$REMOTE_USER $REMOTE_DIR"
+
+      echo '[deploy] Syncing deployment files'
+      rsync -avz \
+        -e 'ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no' \
+        docker-compose.yml \
+        check_apis.sh \
+        jmx_prometheus_javaagent-1.0.1.jar \
+        kafka-jmx-config.yml \
+        prometheus.yml \
+        "$REMOTE_HOST:$REMOTE_DIR/"
+
+      echo '[deploy] Running remote deployment commands'
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$REMOTE_HOST" "
+        set -e
+        cd '$REMOTE_DIR'
+
+        if docker compose version >/dev/null 2>&1; then
+          COMPOSE_CMD='docker compose'
           echo '[deploy] Using docker compose (v2 plugin)'
         elif command -v docker-compose >/dev/null 2>&1; then
-          COMPOSE_CMD='sudo docker-compose'
+          COMPOSE_CMD='docker-compose'
           echo '[deploy] Using docker-compose (v1 binary)'
         else
           echo 'ERROR: neither docker compose nor docker-compose is available on VM'
           exit 1
         fi
-        
-        # 1. Login Docker Registry pour tirer les nouvelles images privées
+
         echo '[deploy] Docker registry login...'
-        echo \"$CI_REGISTRY_PASSWORD\" | sudo docker login $CI_REGISTRY -u \"$CI_REGISTRY_USER\" --password-stdin
+        echo '$CI_REGISTRY_PASSWORD' | sudo docker login '$CI_REGISTRY' -u '$CI_REGISTRY_USER' --password-stdin
         echo '[deploy] Docker registry login done'
-        
-        # 2. Tirer les nouvelles images (seuls les services Java changent)
+
         echo '[deploy] Pulling images...'
-        \$COMPOSE_CMD pull
+        sudo $COMPOSE_CMD pull
         echo '[deploy] Pull done'
-        
-        # 3. Redémarrer les services mis à jour
+
         echo '[deploy] Recreating containers...'
-        \$COMPOSE_CMD up -d --remove-orphans
+        sudo $COMPOSE_CMD up -d --remove-orphans
         echo '[deploy] Containers recreated'
-        \$COMPOSE_CMD ps || true
-        
-        # 4. Nettoyage des anciennes images
+        sudo $COMPOSE_CMD ps || true
+
         echo '[deploy] Pruning old images...'
         sudo docker image prune -f
-        echo '[deploy] Prune done'        
+        echo '[deploy] Prune done'
         echo '[deploy] Deploy script finished successfully'
       "
