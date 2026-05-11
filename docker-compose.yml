@@ -1,443 +1,294 @@
 
+networks:
+  app-net:
+    driver: bridge
+
 services:
-  traffic-service:
-    build:
-      context: .
-      dockerfile: traffic-service/Dockerfile
-    container_name: telecom-traffic-service
-    networks:
-      - kafka-net
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: TRAFFIC-SERVICE
-      APP_STREAMING_ENABLED: "true"
-      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
-      JAVA_TOOL_OPTIONS: >-
-        -XX:+UseContainerSupport
-        -Xms2g
-        -Xmx2g
-        -XX:MaxDirectMemorySize=256m
-        -XX:MaxMetaspaceSize=256m
-        -XX:ReservedCodeCacheSize=128m
-        -XX:+UseG1GC
-    depends_on:
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
-      eureka-server:
-        condition: service_started
-    volumes:
-      - ./volumes/traffic-state:/var/lib/kafka-streams
-    restart: unless-stopped
-    mem_reservation: 1024m
-    mem_limit: 3072m
-    memswap_limit: 4096m
-  sms-service:
-    build:
-      context: .
-      dockerfile: sms-service/Dockerfile
-    container_name: telecom-sms-service
-    networks:
-      - kafka-net
-    environment:
-      DB_HOST: ${DB_HOST:-localhost}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-require}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: SMS-SERVICE
-      APP_STREAMING_ENABLED: "true"
-      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    volumes:
-      - ./volumes/sms-state:/var/lib/kafka-streams
-    restart: unless-stopped
-
-  call-service:
-    build:
-      context: .
-      dockerfile: call-service/Dockerfile
-    container_name: telecom-call-service
-    networks:
-      - kafka-net
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: CALL-SERVICE
-      APP_STREAMING_ENABLED: "true"
-      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    volumes:
-      - ./volumes/call-state:/var/lib/kafka-streams
-    restart: unless-stopped
-
-  internet-service:
-    build:
-      context: .
-      dockerfile: internet-service/Dockerfile
-    container_name: telecom-internet-service
-    networks:
-      - kafka-net
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: INTERNET-SERVICE
-      APP_STREAMING_ENABLED: "true"
-      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    volumes:
-      - ./volumes/internet-state:/var/lib/kafka-streams
-    restart: unless-stopped
-
-  alert-service:
-    build:
-      context: .
-      dockerfile: alert-service/Dockerfile
-    container_name: telecom-alert-service
-    networks:
-      - kafka-net
-    environment:
-      DB_HOST: ${DB_HOST:-localhost}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-require}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: ALERT-SERVICE
-      APP_STREAMING_ENABLED: "false"
-      CELL_SERVICE_BASE_URL: http://cell-service:8102
-      SPRING_MAIL_HOST: mailpit
-      SPRING_MAIL_PORT: 1025
-      SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_USE_TYPE_HEADERS: "false"
-    depends_on:
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
-      eureka-server:
-        condition: service_started
-    restart: unless-stopped
-    mem_reservation: 1024m
-    mem_limit: 3072m
-    memswap_limit: 4096m
-
-  cell-service:
-    build:
-      context: .
-      dockerfile: cell-service/Dockerfile
-    container_name: telecom-cell-service
-    networks:
-      - kafka-net
-    environment:
-      DB_HOST: ${DB_HOST:-localhost}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-require}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: CELL-SERVICE
-      APP_STREAMING_ENABLED: "false"
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    restart: unless-stopped
-    mem_reservation: 1024m
-    mem_limit: 3072m
-    memswap_limit: 4096m
-
-  mobility-service:
-    build:
-      context: .
-      dockerfile: mobility-service/Dockerfile
-    container_name: telecom-mobility-service
-    networks:
-      - kafka-net
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: MOBILITY-SERVICE
-      APP_STREAMING_ENABLED: "true"
-      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /var/lib/kafka-streams
-      JAVA_TOOL_OPTIONS: >-
-        -XX:+UseContainerSupport
-        -Xms1g
-        -Xmx1g
-        -XX:MaxMetaspaceSize=256m
-        -XX:ReservedCodeCacheSize=128m
-        -XX:+UseG1GC
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    volumes:
-      - ./volumes/mobility-state:/var/lib/kafka-streams
-    restart: unless-stopped
-    mem_reservation: 1024m
-    mem_limit: 3072m
-    memswap_limit: 4096m
-
-  producer:
-    build:
-      context: .
-      dockerfile: producer/Dockerfile
-    container_name: telecom-producer
-    networks:
-      - kafka-net
-    environment:
-      DB_HOST: ${DB_HOST:-localhost}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-milan_telecom}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE:-require}
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      PRODUCER_POLL_INTERVAL_MS: ${PRODUCER_POLL_INTERVAL_MS:-900000}
-      APP_SIMULATION_PAGE_SEND_TIMEOUT_SECONDS: ${APP_SIMULATION_PAGE_SEND_TIMEOUT_SECONDS:-30}
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      EUREKA_ENABLED: "true"
-    depends_on:
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
-      eureka-server:
-        condition: service_started
-    restart: unless-stopped
-
-  gateway-service:
-    build:
-      context: .
-      dockerfile: gateway-service/Dockerfile
-    container_name: telecom-gateway
-    networks:
-      - kafka-net
-    ports:
-      - "8090:8090"
-    environment:
-      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
-      SPRING_APPLICATION_NAME: GATEWAY-SERVICE
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: telecom
-      KEYCLOAK_CLIENT_ID: gateway-service
-      KEYCLOAK_CLIENT_SECRET: change-me
-    depends_on:
-      eureka-server:
-        condition: service_started
-    restart: unless-stopped
-
+  # ========== INFRASTRUCTURE ==========
   eureka-server:
     image: steeltoeoss/eureka-server:latest
     container_name: telecom-eureka
-    networks:
-      - kafka-net
-    ports:
-      - "8761:8761"
+    networks: [app-net]
+    ports: ["8761:8761"]
     environment:
-      - EUREKA_CLIENT_REGISTERWITH_EUREKA=false
-      - EUREKA_CLIENT_FETCHREGISTRY=false
       - EUREKA_INSTANCE_HOSTNAME=eureka-server
-    mem_reservation: 128m
-    mem_limit: 384m
-    memswap_limit: 768m
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
+      - EUREKA_SERVER_WAIT_TIME_IN_MS_WHEN_SYNC_EMPTY=0
+      # Use localhost for internal zone to avoid DNS loops during startup
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://localhost:8761/eureka/
+    healthcheck:
+      # Use netcat (nc) to just check if the port is open
+      test: ["CMD-SHELL", "nc -z localhost 8761 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   kafka:
-    image: apache/kafka:4.1.1
-    hostname: kafka
-    container_name: telecom-kafka
-    networks:
-      - kafka-net
-    ports:
-      - "9092:9092"   # External clients
+    image: apache/kafka:3.7.0
+    container_name: kafka
+    networks: [app-net]
     environment:
-      # Used by manual format command below
-      CLUSTER_ID: "4L6g3nShT8qIEaYHq5ZqWA"
-
-      # Ultra-conservative profile for Docker Desktop/laptop memory constraints.
-      KAFKA_HEAP_OPTS: >-
-        -Xms128m
-        -Xmx256m
-        -XX:MaxDirectMemorySize=128m
-        -XX:MaxMetaspaceSize=96m
-        -XX:+UseG1GC
-        -XX:MaxGCPauseMillis=100
-        -XX:+ExplicitGCInvokesConcurrent
-      KAFKA_OPTS: >-
-        -javaagent:/opt/kafka/monitoring/jmx_prometheus_javaagent-1.0.1.jar=7071:/opt/kafka/monitoring/kafka-jmx-config.yml
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+      KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-1.0.1.jar=7071:/opt/jmx-exporter/kafka-jmx-config.yml"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1
     volumes:
-      - ./volumes/kafka-data:/opt/kafka/data
-      - ./monitoring/kafka-server.properties:/opt/kafka/config/server.properties
-      - ./monitoring/jmx_prometheus_javaagent-1.0.1.jar:/opt/kafka/monitoring/jmx_prometheus_javaagent-1.0.1.jar:ro
-      - ./monitoring/kafka-jmx-config.yml:/opt/kafka/monitoring/kafka-jmx-config.yml:ro
-    # Keep hard RAM cap small, but allow swap cushion to avoid immediate OOM-kill spikes.
-    mem_reservation: 1024m
-    mem_limit: 3072m
-    memswap_limit: 4096m
-    restart: unless-stopped
-    command: >
-      bash -c "
-        if [ ! -f /opt/kafka/data/meta.properties ]; then
-          echo \"Formatting Kafka storage with Cluster ID: $${CLUSTER_ID}\"
-          /opt/kafka/bin/kafka-storage.sh format -t $${CLUSTER_ID} -c /opt/kafka/config/server.properties
-        else
-          echo \"Kafka storage already formatted\"
-        fi
-        exec /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
-      "
+      - kafka-data:/var/lib/kafka/data
+      - ./jmx_prometheus_javaagent-1.0.1.jar:/opt/jmx-exporter/jmx_prometheus_javaagent-1.0.1.jar
+      - ./kafka-jmx-config.yml:/opt/jmx-exporter/kafka-jmx-config.yml
     healthcheck:
-      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/9092'"]
-      interval: 15s
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+    restart: unless-stopped
 
   kafka-init:
-    image: apache/kafka:4.1.1
+    image: apache/kafka:3.7.0
     container_name: telecom-kafka-init
-    networks:
-      - kafka-net
+    networks: [app-net]
     depends_on:
       kafka:
         condition: service_healthy
-    restart: "no"
     entrypoint: ["/bin/bash", "-ec"]
-    command: >
-      '
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic simulation.clock --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.mobility --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.call --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.sms --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.internet --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic activity.total --partitions 1 --replication-factor 1;
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic alerts.congestion --partitions 1 --replication-factor 1;
-      '
-
-  kafkaui:
-    image: provectuslabs/kafka-ui:v0.7.2
-    container_name: kafkaui
-    networks:
-      - kafka-net
-    ports:
-      - "0.0.0.0:8082:8080"  # UI runs on 8080 internally → mapped to 8082 on host
-    environment:
-      DYNAMIC_CONFIG_ENABLED: "true"
-      KAFKA_CLUSTERS_0_NAME: "QUALIF CLUSTER"
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:29092"
-    depends_on:
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
-    restart: unless-stopped
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:25.0
-    container_name: telecom-keycloak
-    networks:
-      - kafka-net
-    ports:
-      - "8081:8080"  # Keycloak runs on 8080 internally → mapped to 8081 on host
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: postgres
-      KC_HOSTNAME_STRICT: "false"
-      KC_HTTP_ENABLED: "true"
-      KC_METRICS_ENABLED: "true"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  prometheus:
-    image: prom/prometheus:v2.54.1
-    container_name: telecom-prometheus
-    networks:
-      - kafka-net
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./volumes/prometheus-data:/prometheus
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-lifecycle'
-    depends_on:
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    restart: unless-stopped
+      - |
+        echo "Waiting for Kafka to be fully ready..."
+        sleep 5
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic simulation.clock --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic activity.mobility --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic activity.call --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic activity.sms --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic activity.internet --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic activity.total --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic alerts.congestion --partitions 1 --replication-factor 1
 
-  grafana:
-      image: grafana/grafana:11.5.2
-      container_name: telecom-grafana
-      networks:
-        - kafka-net
-      ports:
-        # Changed host port to 3001 so it doesn't conflict with Next.js on 3000
-        - "3000:3000" 
-      user: "${UID:-1000}:${GID:-1000}"
-      environment:
-        GF_SECURITY_ADMIN_PASSWORD: "admin"
-        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/springboot-status-dashboard.json
-        # --- NEW SETTINGS FOR NEXT.JS INTEGRATION ---
-        GF_SECURITY_ALLOW_EMBEDDING: "true"
-        GF_AUTH_ANONYMOUS_ENABLED: "true"
-        GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
-        # Optional: If you run into cross-origin cookie issues in the browser, uncomment this:
-        # GF_SECURITY_COOKIE_SAMESITE: "none"
-      volumes:
-        - ./volumes/grafana-data:/var/lib/grafana
-        - ./monitoring/grafana-provisioning-datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
-        - ./monitoring/grafana-provisioning-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
-        - ./monitoring/dashboards:/var/lib/grafana/dashboards
-      depends_on:
-        - prometheus
-      restart: unless-stopped
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: telecom-kafka-ui
+    ports: ["9021:8080"]
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=telecom-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    depends_on: [kafka]
+    networks: [app-net]
+    restart: unless-stopped
 
   mailpit:
     image: axllent/mailpit:v1.15
     container_name: telecom-mailpit
     networks:
-      - kafka-net
+      - app-net
     ports:
       - "8025:8025" # Web UI
       - "1025:1025" # SMTP
     restart: unless-stopped
 
-networks:
-  kafka-net:
-    driver: bridge
+
+  # ========== MICROSERVICES ==========
+  gateway-service:
+    image: ${CI_REGISTRY_IMAGE}/gateway-service:latest
+    container_name: telecom-gateway
+    depends_on:
+      eureka-server:
+        condition: service_healthy # Wait for healthcheck to pass
+      kafka:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx384m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+        - "8090:8090"
+    networks: [app-net]
+    restart: unless-stopped
+
+  traffic-service:
+    image: ${CI_REGISTRY_IMAGE}/traffic-service:latest
+    container_name: telecom-traffic-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /tmp/kafka-streams
+    volumes:
+      - traffic-state:/tmp/kafka-streams
+    networks: [app-net]
+    restart: unless-stopped
+
+  sms-service:
+    image: ${CI_REGISTRY_IMAGE}/sms-service:latest
+    container_name: telecom-sms-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [app-net]
+    restart: unless-stopped
+
+  call-service:
+    image: ${CI_REGISTRY_IMAGE}/call-service:latest
+    container_name: telecom-call-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [app-net]
+    restart: unless-stopped
+
+  internet-service:
+    image: ${CI_REGISTRY_IMAGE}/internet-service:latest
+    container_name: telecom-internet-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [app-net]
+    restart: unless-stopped
+
+  mobility-service:
+    image: ${CI_REGISTRY_IMAGE}/mobility-service:latest
+    container_name: telecom-mobility-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx384m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_STREAMS_PROPERTIES_STATE_DIR: /tmp/kafka-streams
+    volumes:
+      - mobility-state:/tmp/kafka-streams
+    networks: [app-net]
+    restart: unless-stopped
+
+  alert-service:
+    image: ${CI_REGISTRY_IMAGE}/alert-service:latest
+    container_name: telecom-alert-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 45 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+    networks: [app-net]
+    restart: unless-stopped
+
+  cell-service:
+    image: ${CI_REGISTRY_IMAGE}/cell-service:latest
+    container_name: telecom-cell-service
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 40 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [app-net]
+    restart: unless-stopped
+
+  producer:
+    image: ${CI_REGISTRY_IMAGE}/producer:latest
+    container_name: telecom-producer
+    depends_on: [kafka]
+    entrypoint: ["sh", "-c", "sleep 45 && java -jar app.jar"]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx256m -XX:+UseG1GC"
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATASOURCE_CONTINUE_ON_ERROR: "true"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks: [app-net]
+    restart: unless-stopped
+
+  # ========== MONITORING ==========
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: telecom-prometheus
+    depends_on:
+      eureka-server:
+        condition: service_healthy # Wait for Eureka to be FULLY ready
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=3d'
+    networks: [app-net]
+    restart: unless-stopped
+
+volumes:
+  kafka-data:
+  traffic-state:
+  mobility-state:
+  prometheus-data:
