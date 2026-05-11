@@ -188,5 +188,5 @@ deploy-to-vm:
         echo '[deploy] Pruning old images...'
         sudo docker image prune -f
         echo '[deploy] Prune done'
-        echo '[deploy] Deploy script finished successfully'
+        echo '[deploy] Deploy script finished successfully!'
       "
