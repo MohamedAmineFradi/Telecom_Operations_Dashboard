@@ -16,6 +16,7 @@ spring:
                 - "http://localhost:3001"
                 - "http://127.0.0.1:3000"
                 - "http://127.0.0.1:3001"
+                - "https://telecomdashfrontpfe.z28.web.core.windows.net"
                 - "https://*.z6.web.core.windows.net"
               allowedMethods:
                 - GET
