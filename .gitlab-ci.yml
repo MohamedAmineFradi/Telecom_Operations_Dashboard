@@ -19,8 +19,8 @@ variables:
   # CI_REGISTRY_PASSWORD
   # SONAR_TOKEN
   # SONAR_HOST_URL
-  # SONAR_ORGANIZATION
-  # SONAR_PROJECT_KEY
+  # SONAR_ORGANIZATION: "pfe-billcom"
+  # SONAR_PROJECT_KEY: "pfe-billcom_telecom-dashboard"
 
   SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
   GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
