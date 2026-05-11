@@ -37,6 +37,10 @@ default:
 # --- ÉTAPE 1: TESTS + SONAR ---
 test-and-sonar:
   stage: test
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+      when: never
+    - when: on_success
   cache:
     key: sonar-cache
     paths:
