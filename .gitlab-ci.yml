@@ -38,7 +38,7 @@ default:
 test-and-sonar:
   stage: test
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /\[skip ci\]/
+    - if: $CI_COMMIT_MESSAGE =~ /\[skip tests\]/
       when: never
     - when: on_success
   cache:
