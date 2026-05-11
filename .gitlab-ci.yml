@@ -139,6 +139,10 @@ deploy-to-vm:
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$REMOTE_HOST" "sudo mkdir -p $REMOTE_DIR && sudo chown -R $REMOTE_USER:$REMOTE_USER $REMOTE_DIR"
 
       echo '[deploy] Syncing deployment files'
+      echo '[deploy] Preparing deployment files at project root'
+      cp monitoring/prometheus/jmx_prometheus_javaagent-1.0.1.jar . || true
+      cp monitoring/prometheus/kafka-jmx-config.yml . || true
+      cp monitoring/prometheus/prometheus.yml . || true
       rsync -avz \
         -e 'ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no' \
         docker-compose.yml \
