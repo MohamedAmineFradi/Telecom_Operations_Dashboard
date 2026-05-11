@@ -9,7 +9,7 @@ info:
     2013-11-01T00:00:00Z .. 2013-11-07T23:59:59Z.
 
 servers:
-  - url: http://localhost:8090
+  - url: https://40.89.136.34:8090
 
 tags:
   - name: traffic
