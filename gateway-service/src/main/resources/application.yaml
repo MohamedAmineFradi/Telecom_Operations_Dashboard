@@ -11,25 +11,18 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-              allowedOrigins:
-                - "http://localhost:3000"
-                - "http://localhost:3001"
-                - "http://127.0.0.1:3000"
-                - "http://127.0.0.1:3001"
-                - "https://telecomdashfrontpfe.z28.web.core.windows.net"
-                - "https://*.z6.web.core.windows.net"
-              allowedMethods:
-                - GET
-                - POST
-                - PUT
-                - DELETE
-                - OPTIONS
-              allowedHeaders: "*"
-              exposedHeaders:
-                - "Content-Type"
-                - "X-Custom-Header"
-              allowCredentials: true        
-              maxAge: 3600
+            allowedOriginPatterns:
+              - "https://*.z28.web.core.windows.net"
+              - "https://telecomdashfrontpfe.z28.web.core.windows.net"
+            allowedMethods:
+              - GET
+              - POST
+              - OPTIONS
+              - PUT
+              - DELETE
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
       loadbalancer:
         configurations: health-check
       routes:
