@@ -2,10 +2,16 @@ package org.telecom_operations_dashboard.gateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -39,5 +45,31 @@ public class GatewayCorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return new CorsWebFilter(source);
+    }
+
+    /**
+     * Handle preflight OPTIONS requests explicitly to prevent routing to backends.
+     * Runs AFTER CorsWebFilter so CORS headers are already added.
+     */
+    @Bean
+    public WebFilter preflightOptionsFilter() {
+        return new PreflightWebFilter();
+    }
+
+    private static class PreflightWebFilter implements WebFilter, Ordered {
+        @Override
+        public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+                if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
+                    exchange.getResponse().setStatusCode(HttpStatus.NO_CONTENT);
+                    return exchange.getResponse().setComplete();
+                }
+                return chain.filter(exchange);
+            }
+
+            @Override
+            public int getOrder() {
+                // Run AFTER CorsWebFilter (which has order -1)
+                return Ordered.HIGHEST_PRECEDENCE + 10;
+            }
     }
 }
