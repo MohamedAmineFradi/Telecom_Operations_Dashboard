@@ -31,6 +31,12 @@ spring:
       loadbalancer:
         configurations: health-check
       routes:
+        - id: preflight-options
+          uri: http://localhost:8090
+          predicates:
+            - Method=OPTIONS
+          filters:
+            - SetStatus=204
         - id: traffic-service
           uri: lb://TRAFFIC-SERVICE
           predicates:

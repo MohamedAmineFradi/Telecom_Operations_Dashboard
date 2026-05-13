@@ -68,8 +68,9 @@ public class GatewayCorsConfig {
 
         @Override
         public int getOrder() {
-            // Run AFTER CorsWebFilter (which has order -1)
-            return Ordered.HIGHEST_PRECEDENCE + 10;
+            // Run AFTER CorsWebFilter (order -1) but BEFORE gateway routes (order 0)
+            // Negative order runs earlier, so use -2 to run right after CORS
+            return -2;
         }
     }
 }
