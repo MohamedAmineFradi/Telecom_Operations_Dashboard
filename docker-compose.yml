@@ -44,7 +44,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
-      KAFKA_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-1.0.1.jar=7071:/opt/jmx-exporter/kafka-jmx-config.yml"
+      KAFKA_JVM_PERFORMANCE_OPTS: "-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-1.0.1.jar=7071:/opt/jmx-exporter/kafka-jmx-config.yml"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1
@@ -262,6 +262,7 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_DATASOURCE_CONTINUE_ON_ERROR: "true"
+      PRODUCER_WATERMARKS_RESET_ON_STARTUP: "true"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
       DB_USERNAME: ${DB_USER}

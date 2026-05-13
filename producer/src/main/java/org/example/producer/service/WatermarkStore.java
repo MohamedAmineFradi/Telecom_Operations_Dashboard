@@ -1,7 +1,11 @@
 package org.example.producer.service;
 
+import jakarta.annotation.PostConstruct;
 import org.example.producer.model.Watermark;
 import org.example.producer.repository.WatermarkRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
@@ -14,10 +18,25 @@ import java.time.OffsetDateTime;
 @Component
 public class WatermarkStore {
 
-    private final WatermarkRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(WatermarkStore.class);
 
-    public WatermarkStore(WatermarkRepository repository) {
+    private final WatermarkRepository repository;
+    private final boolean resetOnStartup;
+
+    public WatermarkStore(WatermarkRepository repository,
+            @Value("${producer.watermarks.reset-on-startup:false}") boolean resetOnStartup) {
         this.repository = repository;
+        this.resetOnStartup = resetOnStartup;
+    }
+
+    @PostConstruct
+    public void resetWatermarksIfRequested() {
+        if (!resetOnStartup) {
+            return;
+        }
+
+        repository.deleteAll();
+        log.info("Cleared persisted replay watermarks before startup");
     }
 
     /**
