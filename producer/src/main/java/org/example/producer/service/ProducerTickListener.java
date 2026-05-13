@@ -4,8 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.telecom_operations_dashboard.common.config.SimulationProperties;
 import org.telecom_operations_dashboard.common.dto.event.SimulationTickEvent;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -19,13 +22,16 @@ public class ProducerTickListener {
     private final List<AbstractReplayProducer<?>> producers;
     private final SimulationClockSseBroadcaster simulationClockSseBroadcaster;
     private final TimeAuthorityService timeAuthorityService;
+    private final SimulationProperties simulationProperties;
 
     public ProducerTickListener(List<AbstractReplayProducer<?>> producers,
             SimulationClockSseBroadcaster simulationClockSseBroadcaster,
-            TimeAuthorityService timeAuthorityService) {
+            TimeAuthorityService timeAuthorityService,
+            SimulationProperties simulationProperties) {
         this.producers = producers != null ? producers : List.of();
         this.simulationClockSseBroadcaster = simulationClockSseBroadcaster;
         this.timeAuthorityService = timeAuthorityService;
+        this.simulationProperties = simulationProperties;
     }
 
     @jakarta.annotation.PostConstruct
@@ -38,9 +44,16 @@ public class ProducerTickListener {
         log.debug("Received simulation tick: {}", event.getTimestamp());
         timeAuthorityService.updateFromSimulationTick(event);
         simulationClockSseBroadcaster.broadcast(event);
+
+        Duration step = simulationProperties.getStep();
+        if (step == null || step.isZero() || step.isNegative()) {
+            step = Duration.ofHours(1);
+        }
+
+        OffsetDateTime globalClockWatermark = event.getTimestamp().plus(step);
         for (AbstractReplayProducer<?> producer : producers) {
             try {
-                producer.doPoll(event.getTimestamp());
+                producer.doPoll(globalClockWatermark);
             } catch (Exception e) {
                 log.error("Failed to process tick for producer: {}", producer.getClass().getSimpleName(), e);
             }
