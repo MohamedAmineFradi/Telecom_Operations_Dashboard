@@ -252,6 +252,7 @@ services:
     networks: [app-net]
     restart: unless-stopped
 
+
   producer:
     image: ${CI_REGISTRY_IMAGE}/producer:latest
     container_name: telecom-producer
