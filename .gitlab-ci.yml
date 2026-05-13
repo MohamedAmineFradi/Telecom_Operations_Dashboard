@@ -177,13 +177,13 @@ deploy-to-vm:
         echo '[deploy] Docker registry login done'
 
         echo '[deploy] Pulling images...'
-        sudo sh -c "\$COMPOSE_CMD pull"
+        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml pull"
         echo '[deploy] Pull done'
 
         echo '[deploy] Recreating containers...'
-        sudo sh -c "\$COMPOSE_CMD up -d --remove-orphans"
+        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml up -d --remove-orphans"
         echo '[deploy] Containers recreated'
-        sudo sh -c "\$COMPOSE_CMD ps" || true
+        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml ps" || true
 
         echo '[deploy] Pruning old images...'
         sudo docker image prune -f
