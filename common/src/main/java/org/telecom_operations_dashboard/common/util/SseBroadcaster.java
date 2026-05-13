@@ -8,6 +8,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utility to safely broadcast events to a collection of SseEmitters.
@@ -16,6 +20,12 @@ public class SseBroadcaster {
 
     private static final Logger log = LoggerFactory.getLogger(SseBroadcaster.class);
     private static final int DEFAULT_MAX_EMITTERS = 250;
+    private static final long HEARTBEAT_INTERVAL_SECONDS = 15L;
+    private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "sse-heartbeat");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     /**
      * Broadcasts data to all emitters in the collection.
@@ -83,7 +93,24 @@ public class SseBroadcaster {
 
         emitters.add(emitter);
 
-        Runnable cleanup = () -> emitters.remove(emitter);
+        final ScheduledFuture<?> heartbeatTask = HEARTBEAT_EXECUTOR.scheduleAtFixedRate(() -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("keepalive", MediaType.TEXT_PLAIN));
+            } catch (IOException | IllegalStateException ex) {
+                emitters.remove(emitter);
+                emitter.complete();
+            } catch (Exception ex) {
+                emitters.remove(emitter);
+                emitter.completeWithError(ex);
+            }
+        }, HEARTBEAT_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_SECONDS, TimeUnit.SECONDS);
+
+        Runnable cleanup = () -> {
+            emitters.remove(emitter);
+            heartbeatTask.cancel(true);
+        };
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
         emitter.onError(e -> cleanup.run());
