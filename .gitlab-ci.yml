@@ -161,15 +161,17 @@ deploy-to-vm:
         set -e
         cd '$REMOTE_DIR'
 
-        if docker compose version >/dev/null 2>&1; then
-          COMPOSE_CMD='docker compose'
+        if docker compose version &> /dev/null; then
+          COMPOSE_CMD=(docker compose)
           echo '[deploy] Using docker compose (v2 plugin)'
-        elif command -v docker-compose >/dev/null 2>&1; then
-          COMPOSE_CMD='docker-compose'
+        elif command -v docker-compose &> /dev/null; then
+          COMPOSE_CMD=(docker-compose)
           echo '[deploy] Using docker-compose (v1 binary)'
         else
-          echo 'ERROR: neither docker compose nor docker-compose is available on VM'
-          exit 1
+          echo '[deploy] Installing Docker Compose plugin...'
+          sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          COMPOSE_CMD=(docker-compose)
         fi
 
         echo '[deploy] Docker registry login...'
@@ -177,13 +179,13 @@ deploy-to-vm:
         echo '[deploy] Docker registry login done'
 
         echo '[deploy] Pulling images...'
-        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml pull"
+        sudo \"\${COMPOSE_CMD[@]}\" -f docker-compose.yml pull
         echo '[deploy] Pull done'
 
         echo '[deploy] Recreating containers...'
-        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml up -d --remove-orphans"
+        sudo \"\${COMPOSE_CMD[@]}\" -f docker-compose.yml up -d --remove-orphans
         echo '[deploy] Containers recreated'
-        sudo sh -c "\$COMPOSE_CMD -f docker-compose.yml ps" || true
+        sudo \"\${COMPOSE_CMD[@]}\" -f docker-compose.yml ps || true
 
         echo '[deploy] Pruning old images...'
         sudo docker image prune -f
