@@ -59,17 +59,17 @@ public class GatewayCorsConfig {
     private static class PreflightWebFilter implements WebFilter, Ordered {
         @Override
         public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-                if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
-                    exchange.getResponse().setStatusCode(HttpStatus.NO_CONTENT);
-                    return exchange.getResponse().setComplete();
-                }
-                return chain.filter(exchange);
+            if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
+                exchange.getResponse().setStatusCode(HttpStatus.NO_CONTENT);
+                return exchange.getResponse().setComplete();
             }
+            return chain.filter(exchange);
+        }
 
-            @Override
-            public int getOrder() {
-                // Run AFTER CorsWebFilter (which has order -1)
-                return Ordered.HIGHEST_PRECEDENCE + 10;
-            }
+        @Override
+        public int getOrder() {
+            // Run AFTER CorsWebFilter (which has order -1)
+            return Ordered.HIGHEST_PRECEDENCE + 10;
+        }
     }
 }
