@@ -100,6 +100,26 @@ services:
       - "1025:1025" # SMTP
     restart: unless-stopped
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: telecom-keycloak
+    networks: [app-net]
+    ports:
+      - "8081:8081"
+    environment:
+      KC_PROXY: edge
+      KC_HOSTNAME: telcompfebackend.francecentral.cloudapp.azure.com
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: 8081
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_METRICS_ENABLED: "true"
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: ["start-dev"]
+    restart: unless-stopped
+
 
   # ========== MICROSERVICES ==========
   gateway-service:
@@ -114,6 +134,10 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx384m -XX:+UseG1GC"
       SPRING_PROFILES_ACTIVE: prod
+      KEYCLOAK_URL: https://telcompfebackend.francecentral.cloudapp.azure.com/auth
+      KEYCLOAK_REALM: telecom
+      KEYCLOAK_CLIENT_ID: gateway-service
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       DB_URL: jdbc:postgresql://${DB_HOST}:5432/milan_telecom?sslmode=require
