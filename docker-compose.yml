@@ -107,6 +107,10 @@ services:
     ports:
       - "8081:8081"
     environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://${DB_HOST}:5432/keycloak
+      KC_DB_USERNAME: ${DB_USER}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
       KC_PROXY: edge
       KC_HOSTNAME: telcompfebackend.francecentral.cloudapp.azure.com
       KC_HOSTNAME_STRICT: "false"
@@ -117,7 +121,7 @@ services:
       KC_METRICS_ENABLED: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    command: ["start-dev"]
+    command: ["start"]
     restart: unless-stopped
 
 
