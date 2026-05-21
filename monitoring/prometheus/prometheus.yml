@@ -22,6 +22,6 @@ scrape_configs:
       - targets: ['kafka:7071']
 
   - job_name: 'keycloak'
-    metrics_path: /auth/realms/master/metrics
+    metrics_path: '/auth/metrics'
     static_configs:
       - targets: ['keycloak:8081']

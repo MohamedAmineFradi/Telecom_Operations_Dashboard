@@ -101,28 +101,34 @@ services:
     restart: unless-stopped
 
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0
-    container_name: telecom-keycloak
-    networks: [app-net]
-    ports:
-      - "8081:8081"
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://${DB_HOST}:5432/keycloak?sslmode=require
-      KC_DB_USERNAME: ${DB_USER}
-      KC_DB_PASSWORD: ${DB_PASSWORD}
-      KC_PROXY: edge
-      KC_HOSTNAME: telcompfebackend.francecentral.cloudapp.azure.com
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "true"
-      KC_HTTP_ENABLED: "true"
-      KC_HTTP_PORT: 8081
-      KC_HTTP_RELATIVE_PATH: /auth
-      KC_METRICS_ENABLED: "true"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    command: ["start"]
-    restart: unless-stopped
+      image: quay.io/keycloak/keycloak:23.0
+      container_name: telecom-keycloak
+      networks: [app-net]
+      ports:
+        - "8081:8081"
+        - "9000:9000"
+      environment:
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://${DB_HOST}:5432/keycloak?sslmode=require
+        KC_DB_USERNAME: ${DB_USER}
+        KC_DB_PASSWORD: ${DB_PASSWORD}
+        KC_PROXY: edge
+        KC_HOSTNAME: telcompfebackend.francecentral.cloudapp.azure.com
+        KC_HOSTNAME_STRICT: "false"
+        KC_HOSTNAME_STRICT_HTTPS: "true"
+        KC_HTTP_ENABLED: "true"
+        KC_HTTP_PORT: 8081
+        KC_HTTP_RELATIVE_PATH: /auth
+        KC_METRICS_ENABLED: "true"
+        KC_HTTP_METRICS_HISTOGRAMS_ENABLED: "true"
+        KC_HOSTNAME_ADMIN: telcompfebackend.francecentral.cloudapp.azure.com
+        KC_HTTP_ADMIN_ENABLED: "true"
+        KC_HTTP_ADMIN_PORT: 9000
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+      command: ["start"]
+      restart: unless-stopped
+
 
 
   # ========== MICROSERVICES ==========
